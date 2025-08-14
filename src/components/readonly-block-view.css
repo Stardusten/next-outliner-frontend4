@@ -1,0 +1,26 @@
+.search-result-item-container .list-item-left {
+  display: none;
+}
+
+.search-result-item-container .ProseMirror {
+  font-size: var(--ui-font-size);
+  background-color: unset !important;
+}
+
+.search-result-item-container div.list-item-x {
+  margin: 0;
+  padding: 0 !important;
+  box-shadow: unset !important;
+}
+
+.search-result-item-container div.list-item-x .ref-counter {
+  display: none;
+}
+
+.search-result-item-container div.list-item-x p {
+  line-height: 1.5;
+}
+
+.search-result-item-container .highlight-keep {
+  background-color: var(--highlight-keep);
+}

@@ -1,0 +1,75 @@
+import { App } from "@/lib/app/app";
+import { useMainRoots } from "./useMainRoots";
+import { useRepoConfigs } from "./useRepoConfigs";
+import { createMemo } from "solid-js";
+import { BlockId, BlockNode } from "@/lib/common/types";
+import {
+  EditableOutlineView,
+  EditableOutlineViewEvents,
+} from "@/lib/app-views/editable-outline/editable-outline";
+
+type BreadcrumbItem = {
+  blockId?: BlockId;
+  title: string;
+};
+
+export const useBreadcrumb = (app: App) => {
+  const [mainRoots, setMainRoots] = useMainRoots();
+  const { currentRepo } = useRepoConfigs();
+
+  const items = createMemo(() => {
+    if (!currentRepo()) throw new Error("No current repo");
+
+    const res: BreadcrumbItem[] = [{ title: currentRepo().title }];
+    if (mainRoots().length === 1) {
+      const rootBlockId = mainRoots()[0];
+      const rootBlock = app.getBlockNode(rootBlockId);
+      if (rootBlock) {
+        const path: BlockId[] = [];
+        let currentBlock: BlockNode | null = rootBlock;
+
+        while (currentBlock) {
+          path.unshift(currentBlock.id);
+          currentBlock = currentBlock.parent() ?? null;
+        }
+
+        path.forEach((blockId) => {
+          const block = app.getBlockNode(blockId);
+          if (block) {
+            const title =
+              app.getTextContent(blockId) || `块 ${blockId.slice(0, 8)}`;
+            res.push({ blockId, title });
+          }
+        });
+      }
+    }
+
+    return res;
+  });
+
+  const handleBreadcrumbClick = (blockId?: BlockId) => {
+    const mainEditor = app.getAppViewById("main");
+    if (!(mainEditor instanceof EditableOutlineView))
+      throw new Error("Failed to find mainEditor");
+
+    if (blockId) mainEditor.setRootBlockIds([blockId]);
+    else mainEditor.setRootBlockIds([]); // TODO ??
+  };
+
+  const handleMainEditorEvent = (
+    key: keyof EditableOutlineViewEvents,
+    event: EditableOutlineViewEvents[keyof EditableOutlineViewEvents]
+  ) => {
+    if (key === "root-blocks-changed") {
+      const typedEvent =
+        event as EditableOutlineViewEvents["root-blocks-changed"];
+      setMainRoots(typedEvent.rootBlockIds);
+    }
+  };
+
+  return {
+    items,
+    handleBreadcrumbClick,
+    handleMainEditorEvent,
+  };
+};
