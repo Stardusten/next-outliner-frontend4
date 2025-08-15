@@ -1,23 +1,20 @@
-import { Show, For, onMount, createEffect, createSignal, on } from "solid-js";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import type { UseSearchReturn } from "@/composables/useSearch";
+import { useI18n } from "@/composables/useI18n";
+import { useSearch } from "@/composables/useSearch";
 import type { App } from "@/lib/app/app";
 import { Eye, Search, Settings2 } from "lucide-solid";
+import { createEffect, createSignal, For, on, onMount, Show } from "solid-js";
 import { ReadonlyBlockView } from "./ReadonlyBlockView";
 import { Button, ButtonProps } from "./ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { useI18n } from "@/composables/useI18n";
-import type { ValidComponent } from "solid-js";
-import { useSearch } from "@/composables/useSearch";
 
 type Props = {
   app: App;
-  trigger: ValidComponent;
 };
 
 export function SearchPopup(props: Props) {
@@ -117,7 +114,14 @@ export function SearchPopup(props: Props) {
       <DialogTrigger
         as={(p: ButtonProps) => (
           <Tooltip>
-            <TooltipTrigger as={props.trigger} {...p} />
+            <TooltipTrigger
+              as={(p) => (
+                <Button variant="ghost" size="xs-icon" {...p}>
+                  <Search />
+                </Button>
+              )}
+              {...p}
+            />
             <TooltipContent>{t("search.tooltip")}</TooltipContent>
           </Tooltip>
         )}

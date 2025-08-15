@@ -5,6 +5,8 @@ import { Button } from "../ui/button";
 import { MainBreadcrumb } from "./MainBreadcrumb";
 import { MoreMenu } from "./MoreMenu";
 import SearchPopup from "../SearchPopup";
+import ClipboardPopup from "../ClipboardPopup";
+import AttachmentPopup from "../AttachmentPopup";
 
 type Props = {
   app: App;
@@ -23,23 +25,10 @@ export const AppHeader = (props: Props) => {
       </div>
 
       <div class="flex items-center gap-1">
-        <SearchPopup
-          app={props.app}
-          trigger={(p) => (
-            <Button variant="ghost" size="xs-icon" {...p}>
-              <Search />
-            </Button>
-          )}
-        />
-
-        <MoreMenu
-          trigger={(p) => (
-            <Button variant="ghost" size="xs-icon" {...p}>
-              <MoreHorizontal />
-            </Button>
-          )}
-          app={props.app}
-        />
+        <AttachmentPopup app={props.app} />
+        <ClipboardPopup app={props.app} />
+        <SearchPopup app={props.app} />
+        <MoreMenu app={props.app} />
       </div>
     </header>
   );

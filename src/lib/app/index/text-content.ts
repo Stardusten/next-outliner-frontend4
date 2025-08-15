@@ -154,14 +154,16 @@ function loadTextContentToCache(
       if (currNode.attrs.isTag) {
         arrWithTag.push("#" + contentWithTag);
       } else {
-        arrWithoutTag.push("[[" + contentWithTag + "]]");
-        arrWithoutTag.push(contentWithoutTag);
+        arrWithTag.push("[[" + contentWithTag + "]]");
+        arrWithoutTag.push("[[" + contentWithoutTag + "]]");
       }
     }
   });
 
-  app.textContentCache.set(blockId, [
+  const res = [
     arrWithTag.join("").trim(),
     arrWithoutTag.join("").trim(),
-  ]);
+  ] as const;
+  // console.log(res);
+  app.textContentCache.set(blockId, res);
 }

@@ -1,4 +1,9 @@
 import { Node } from "@tiptap/core";
+import { fileInlineNodeViewRenderer } from "@/components/node-views/FileInlineView";
+import { fileExpandedNodeViewRenderer } from "@/components/node-views/FileExpandedView";
+import { filePreviewNodeViewRenderer } from "@/components/node-views/FilePreviewView";
+import type { NodeView } from "@tiptap/pm/view";
+import type { NodeViewRendererProps } from "@tiptap/core";
 import { imageIcon } from "./icons/image";
 import { videoIcon } from "./icons/video";
 import { audioIcon } from "./icons/audio";
@@ -28,6 +33,34 @@ export const File = Node.create({
   renderHTML({ node, HTMLAttributes }) {
     // todo
     return ["div", HTMLAttributes, node.attrs.filename];
+  },
+  addNodeView() {
+    // 仅在 displayMode === 'inline' 时使用 Solid NodeView；其他模式先走简单占位以保持现状
+    return (props) => {
+      const mode = (props.node.attrs as any).displayMode;
+      if (mode === "inline") {
+        return (fileInlineNodeViewRenderer as any)(props);
+      }
+      if (mode === "expanded") {
+        return (fileExpandedNodeViewRenderer as any)(props);
+      }
+      if (mode === "preview") {
+        return (filePreviewNodeViewRenderer as any)(props);
+      }
+      // 简单占位渲染，与 renderHTML 一致：显示文件名
+      class SimpleFileView implements NodeView {
+        dom: HTMLElement;
+        constructor(p: NodeViewRendererProps) {
+          const el = document.createElement("span");
+          el.textContent = (p.node.attrs as any).filename ?? "file";
+          this.dom = el;
+        }
+        destroy() {
+          this.dom.remove();
+        }
+      }
+      return new SimpleFileView(props);
+    };
   },
 });
 

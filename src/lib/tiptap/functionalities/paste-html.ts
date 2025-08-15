@@ -17,7 +17,7 @@ const PASTE_HTML_OR_PLAIN_TEXT_NAME = "pasteHtmlOrPlainText";
 
 type Block = {
   id: string;
-  type: "text" | "code" | "search";
+  type: "text" | "code" | "search" | "tag";
   folded: boolean;
   content: string;
   parentId: string | null;

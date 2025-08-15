@@ -415,9 +415,12 @@ export class R2AttachmentStorage implements AttachmentStorage {
   }
 
   /** 测试连接配置是否有效 */
-  static async test_conn(
-    cfg: R2BrowserConfig
-  ): Promise<{ success: boolean; message: string }> {
+  static async test_conn(cfg: R2BrowserConfig): Promise<{
+    success: boolean;
+    message: string;
+    messageKey?: string;
+    params?: Record<string, any>;
+  }> {
     try {
       const client = new S3Client({
         region: cfg.region ?? "auto",
@@ -440,32 +443,41 @@ export class R2AttachmentStorage implements AttachmentStorage {
 
       return {
         success: true,
-        message: "连接成功",
+        message: "",
+        messageKey: "r2.test.success",
       };
     } catch (error) {
-      let message = "连接失败";
+      let message = "";
+      let messageKey: string | undefined = "r2.test.failed";
 
       if (error instanceof Error) {
         // 根据错误类型提供更具体的信息
         if (error.message.includes("NoSuchBucket")) {
-          message = "存储桶不存在";
+          messageKey = "r2.test.noSuchBucket";
         } else if (error.message.includes("InvalidAccessKeyId")) {
-          message = "Access Key 无效";
+          messageKey = "r2.test.invalidAccessKey";
         } else if (error.message.includes("SignatureDoesNotMatch")) {
-          message = "Secret Key 无效";
+          messageKey = "r2.test.signatureMismatch";
         } else if (
           error.message.includes("NetworkingError") ||
           error.message.includes("fetch")
         ) {
-          message = "网络连接失败，请检查 Endpoint";
+          messageKey = "r2.test.networkError";
         } else {
-          message = `连接失败: ${error.message}`;
+          messageKey = "r2.test.failedWithMessage";
+          return {
+            success: false,
+            message: "",
+            messageKey,
+            params: { message: error.message },
+          };
         }
       }
 
       return {
         success: false,
-        message,
+        message: "",
+        messageKey,
       };
     }
   }

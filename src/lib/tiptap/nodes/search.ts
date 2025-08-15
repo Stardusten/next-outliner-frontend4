@@ -1,3 +1,4 @@
+import { searchViewRenderer } from "@/components/node-views/SearchView";
 import { mergeAttributes, Node } from "@tiptap/core";
 
 export type SearchAttrs = {
@@ -33,7 +34,7 @@ export const Search = Node.create({
   renderHTML({ HTMLAttributes }) {
     return ["div", 0];
   },
-  // addNodeView() {
-  //   return VueNodeViewRenderer(SearchView);
-  // },
+  addNodeView() {
+    return searchViewRenderer;
+  },
 });

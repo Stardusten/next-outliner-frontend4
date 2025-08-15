@@ -17,6 +17,7 @@ import {
 import type { AppViewId } from "../types";
 import { useI18n } from "@/composables/useI18n";
 import { showToast } from "@/components/ui/toast";
+import { useBlockClipboard } from "@/composables/useBlockClipboard";
 
 /**
  * 判断一个 List Item Node 内容是不是空的
@@ -97,7 +98,7 @@ export function demoteSelected(editor: TiptapEditor): Command {
   };
 }
 
-export function splitListItem(editor: TiptapEditor): Command {
+export function splitListItemSpecial(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview, schema } = editor;
 
@@ -108,11 +109,105 @@ export function splitListItem(editor: TiptapEditor): Command {
     const { node: listItem } = currListItem;
     const currBlockId = listItem.attrs.blockId as BlockId;
 
-    const currentBlockNode = appview.app.getBlockNode(currBlockId);
-    if (!currentBlockNode) return false;
+    const currBlockNode = appview.app.getBlockNode(currBlockId);
+    if (!currBlockNode) return false;
 
-    const paragraphNode = listItem.firstChild;
-    if (!paragraphNode) return false;
+    const pNode = listItem.firstChild;
+    if (!pNode) return false;
+
+    if (!dispatch) return true;
+
+    const splitPos = $from.parentOffset;
+    if (splitPos === 0) {
+      appview.app.withTx((tx) => {
+        // 在开头分割：当前块上方创建空的新块，保持当前块内容不变
+        const newContent = contentNodeToStr(schema.nodes.paragraph.create());
+        const newBlockId = tx.createBlockBefore(currBlockId, {
+          type: "text",
+          folded: false,
+          content: newContent,
+        });
+        // 要求聚焦到新块
+        tx.setSelection({
+          viewId: appview.id,
+          blockId: newBlockId,
+          anchor: 0,
+        });
+        tx.setOrigin("localEditorStructural");
+      });
+    } else if (splitPos === pNode.content.size) {
+      appview.app.withTx((tx) => {
+        // 在末尾分割：当前块下方创建空的新块，保持当前块内容不变
+        const newContent = contentNodeToStr(schema.nodes.paragraph.create());
+        const newBlockId = tx.createBlockAfter(currBlockId, {
+          type: "text",
+          folded: false,
+          content: newContent,
+        });
+        // 要求聚焦到新块
+        tx.setSelection({
+          viewId: appview.id,
+          blockId: newBlockId,
+          anchor: 0,
+        });
+        tx.setOrigin("localEditorStructural");
+      });
+    } else {
+      const { t } = useI18n();
+      showToast({
+        title: t("commands.cannotSplitInMiddle"),
+        variant: "warning",
+      });
+    }
+    return true;
+  };
+}
+
+/** 如果光标在 listItem 开头，则阻止 */
+export function stopOnListItemBegin(): Command {
+  return function (state, dispatch) {
+    const currListItem = findCurrListItem(state);
+    if (!currListItem) return false;
+
+    const { $from, empty } = state.selection;
+    if (empty && $from.parentOffset === 0) return true;
+
+    return false;
+  };
+}
+
+/** 如果光标在 listItem 末尾，则阻止 */
+export function stopOnListItemEnd(): Command {
+  return function (state, dispatch) {
+    const currListItem = findCurrListItem(state);
+    if (!currListItem) return false;
+
+    const { $from, empty } = state.selection;
+    const pNode = currListItem.node.firstChild;
+    if (empty && $from.parentOffset === pNode.content.size) return true;
+
+    return false;
+  };
+}
+
+export function splitListItemText(editor: TiptapEditor): Command {
+  return function (state, dispatch) {
+    const { appView: appview, schema } = editor;
+
+    const { $from } = state.selection;
+    const currListItem = findCurrListItem(state);
+    if (!currListItem) return false;
+
+    const { node: listItem } = currListItem;
+    if (listItem.attrs.type !== "text") return false; // 这个方法仅用于文本块
+
+    const currBlockId = listItem.attrs.blockId as BlockId;
+
+    const currBlockNode = appview.app.getBlockNode(currBlockId);
+    if (!currBlockNode) return false;
+
+    const pNode = listItem.firstChild;
+    if (!pNode) return false;
 
     if (!dispatch) return true;
 
@@ -137,8 +232,8 @@ export function splitListItem(editor: TiptapEditor): Command {
     } else {
       appview.app.withTx((tx) => {
         // 在中间或末尾分割：更新当前块为分割前内容，新块为分割后内容
-        const beforeContent = paragraphNode.cut(0, splitPos);
-        const afterContent = paragraphNode.cut(splitPos);
+        const beforeContent = pNode.cut(0, splitPos);
+        const afterContent = pNode.cut(splitPos);
         const beforeSerialized = contentNodeToStr(beforeContent);
         const afterSerialized = contentNodeToStr(afterContent);
         tx.updateBlock(currBlockId, { content: beforeSerialized });
@@ -956,148 +1051,142 @@ export async function uploadFile(
   editor: TiptapEditor,
   getFile: () => Promise<File>
 ) {
-  // const { appView: appview } = editor;
-  // if (!appview.app.attachmentStorage) {
-  //   toast.error("未配置附件存储，无法上传文件");
-  //   return;
-  // }
+  const { appView: appview } = editor;
+  const storage = appview.app.attachmentStorage;
+  const { t } = useI18n();
+  if (!storage) {
+    showToast({
+      title: t("attachment.storageNotConfigured") as string,
+      variant: "destructive",
+    });
+    return;
+  }
 
-  // // 获得要上传的文件
-  // const file = await getFile();
+  const file = await getFile();
+  if (!file) return;
 
-  // // 检查当前是否在列表项中
-  // const currListItem = findCurrListItem(editor.state);
-  // if (!currListItem) return;
+  // 必须在段落内
+  const currListItem = findCurrListItem(editor.state);
+  if (!currListItem) return;
 
-  // // 当任务创建时插入文件节点
-  // let taskId: string | null = null;
-  // const fileType = editor.schema.nodes.file;
-  // const onTaskCreated = (task: AttachmentTaskInfo) => {
-  //   // 开始执行就立刻移除监听器，确保只执行一次
-  //   appview.app.attachmentStorage?.off("task:created", onTaskCreated);
+  let taskId: string | null = null;
+  const fileType = editor.schema.nodes.file;
 
-  //   // 记录任务 ID，用于后续的文件节点更新
-  //   taskId = task.id;
+  const offAll = () => {
+    storage.off("task:created", onTaskCreated);
+    storage.off("task:progress", onTaskProgress);
+    storage.off("task:completed", onTaskCompleted);
+    storage.off("task:failed", onTaskFailed);
+  };
 
-  //   // 插入 inline 文件节点，状态为 uploading-0
-  //   const tr = editor.state.tr;
-  //   const fileNode = fileType.create({
-  //     path: task.path,
-  //     displayMode: getFileDisplayMode(getFileType(task.filename)), // 使用默认值，后续可以优化
-  //     filename: task.filename,
-  //     type: getFileType(task.path),
-  //     size: task.size,
-  //     status: "uploading-0",
-  //   });
-  //   tr.replaceSelectionWith(fileNode);
-  //   editor.view.dispatch(tr);
-  // };
+  const onTaskCreated = (task: AttachmentTaskInfo) => {
+    // 仅处理当前文件名的任务（粗略匹配，必要时可增强）
+    if (task.filename !== file.name) return;
+    taskId = task.id;
 
-  // // 注册进度监听器：更新上传进度
-  // const onTaskProgress = (task: AttachmentTaskInfo) => {
-  //   // 如果任务 ID 不匹配，说明不是当前任务，直接返回
-  //   if (task.id !== taskId) return;
+    // 插入 inline 文件节点，状态 uploading-0
+    const tr = editor.state.tr;
+    const node = fileType.create({
+      path: task.path,
+      displayMode: getFileDisplayMode(getFileType(task.filename)),
+      filename: task.filename,
+      type: getFileType(task.path),
+      size: task.size,
+      status: "uploading-0",
+    });
+    tr.replaceSelectionWith(node);
+    editor.view.dispatch(tr);
+    // 只需创建一次
+    storage.off("task:created", onTaskCreated);
+  };
 
-  //   if (task.progress === undefined) return;
+  const onTaskProgress = (task: AttachmentTaskInfo) => {
+    if (taskId == null || task.id !== taskId) return;
+    if (task.progress == null) return;
 
-  //   let found: any = null;
+    let found: [Node, number] | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (found) return false;
+      if (
+        node.type.name === File.name &&
+        (node.attrs as any).path === task.path
+      ) {
+        found = [node, pos];
+        return false;
+      }
+    });
+    if (found) {
+      const [fn, pos] = found;
+      const newAttrs = {
+        ...(fn.attrs as any),
+        status: `uploading-${Math.round(task.progress!)}`,
+      };
+      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+      editor.view.dispatch(tr);
+    }
+  };
 
-  //   editor.state.doc.descendants((node, pos) => {
-  //     if (found) return false;
-  //     if (node.type.name === File.name && node.attrs.path === task.path) {
-  //       found = [node, pos];
-  //       return false;
-  //     }
-  //   });
+  const onTaskCompleted = (task: AttachmentTaskInfo) => {
+    if (taskId == null || task.id !== taskId) return;
+    offAll();
 
-  //   if (found) {
-  //     const [fileNode, filePos]: [Node, number] = found;
-  //     const newAttrs = {
-  //       ...fileNode.attrs,
-  //       status: `uploading-${Math.round(task.progress)}`,
-  //     };
+    let found: [Node, number] | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (found) return false;
+      if (
+        node.type.name === File.name &&
+        (node.attrs as any).path === task.path
+      ) {
+        found = [node, pos];
+        return false;
+      }
+    });
+    if (found) {
+      const [fn, pos] = found;
+      const newAttrs = {
+        ...(fn.attrs as any),
+        path: task.path,
+        status: "uploaded",
+      };
+      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+      editor.view.dispatch(tr);
+    }
+  };
 
-  //     const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
-  //     editor.view.dispatch(tr);
-  //   }
-  // };
+  const onTaskFailed = (task: AttachmentTaskInfo) => {
+    if (taskId == null || task.id !== taskId) return;
+    offAll();
 
-  // // 注册任务完成监听器：更新文件节点的 path 和状态
-  // const onTaskCompleted = (task: AttachmentTaskInfo) => {
-  //   // 如果任务 ID 不匹配，说明不是当前任务，直接返回
-  //   if (task.id !== taskId) return;
+    let found: [Node, number] | null = null;
+    editor.state.doc.descendants((node, pos) => {
+      if (found) return false;
+      if (
+        node.type.name === File.name &&
+        (node.attrs as any).path === task.path
+      ) {
+        found = [node, pos];
+        return false;
+      }
+    });
+    if (found) {
+      const [fn, pos] = found;
+      const newAttrs = {
+        ...(fn.attrs as any),
+        status: "failed-1",
+      };
+      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+      editor.view.dispatch(tr);
+    }
+  };
 
-  //   // 移除监听器
-  //   appview.app.attachmentStorage?.off("task:completed", onTaskCompleted);
-  //   appview.app.attachmentStorage?.off("task:progress", onTaskProgress);
+  // 注册
+  storage.on("task:created", onTaskCreated);
+  storage.on("task:progress", onTaskProgress);
+  storage.on("task:completed", onTaskCompleted);
+  storage.on("task:failed", onTaskFailed);
 
-  //   // 在文档中找到对应的文件节点并更新
-  //   let found: any = null;
-
-  //   editor.state.doc.descendants((node, pos) => {
-  //     if (found) return false;
-  //     if (node.type.name === File.name && node.attrs.path === task.path) {
-  //       found = [node, pos];
-  //       return false; // 停止遍历
-  //     }
-  //   });
-
-  //   if (found) {
-  //     const [fileNode, filePos]: [Node, number] = found;
-  //     const currentAttrs = fileNode.attrs as any;
-  //     const newAttrs = {
-  //       ...currentAttrs,
-  //       path: task.path, // 更新为真实的 path
-  //       status: "uploaded",
-  //     };
-
-  //     const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
-  //     editor.view.dispatch(tr);
-  //   }
-  // };
-
-  // // 注册任务失败监听器：更新文件节点状态
-  // const onTaskFailed = (task: AttachmentTaskInfo) => {
-  //   // 如果任务 ID 不匹配，说明不是当前任务，直接返回
-  //   if (task.id !== taskId) return;
-
-  //   // 移除监听器
-  //   appview.app.attachmentStorage?.off("task:failed", onTaskFailed);
-  //   appview.app.attachmentStorage?.off("task:progress", onTaskProgress);
-
-  //   // 在文档中找到对应的文件节点并更新状态
-  //   let found: any = null;
-
-  //   editor.state.doc.descendants((node, pos) => {
-  //     if (found) return false;
-  //     if (node.type.name === File.name && node.attrs.path === task.path) {
-  //       found = [node, pos];
-  //       return false;
-  //     }
-  //   });
-
-  //   if (found) {
-  //     const [fileNode, filePos]: [Node, number] = found;
-  //     const newAttrs = {
-  //       ...fileNode.attrs,
-  //       status: "failed-1",
-  //     };
-
-  //     const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
-  //     editor.view.dispatch(tr);
-  //   }
-  // };
-
-  // // 注册所有事件监听器
-  // appview.app.attachmentStorage?.on("task:created", onTaskCreated);
-  // appview.app.attachmentStorage?.on("task:completed", onTaskCompleted);
-  // appview.app.attachmentStorage?.on("task:failed", onTaskFailed);
-  // appview.app.attachmentStorage?.on("task:progress", onTaskProgress);
-
-  // // 直接上传文件，不需要确认对话框
-  // const attachment = useAttachment(appview.app);
-  // await attachment.upload(file, false);
-  throw new Error("未实现：uploadFile");
+  // 触发上传
+  await storage.upload(file);
 }
 
 export function changeFileDisplayMode(
@@ -1213,19 +1302,24 @@ export function recursiveDeleteBlock(
 
 export function addToBlockClipboard(editor: TiptapEditor): Command {
   return function (state, dispatch) {
-    // const listItemInfo = findCurrListItem(state);
-    // if (!listItemInfo) return false;
+    const listItemInfo = findCurrListItem(state);
+    if (!listItemInfo) return false;
 
-    // const blockId = listItemInfo.node.attrs.blockId as BlockId;
-    // if (!blockId) return false;
+    const blockId = listItemInfo.node.attrs.blockId as BlockId;
+    if (!blockId) return false;
 
-    // if (!dispatch) return true;
+    if (!dispatch) return true;
 
-    // const clipboard = useBlockClipboard(editor.appView.app);
-    // clipboard.addBlock(blockId);
+    const clipboard = useBlockClipboard(editor.appView.app);
+    clipboard.addBlock(blockId);
 
-    // return true;
-    throw new Error("未实现：addToBlockClipboard");
+    return true;
+  };
+}
+
+export function pasteAllBlocksFromClipboard(editor: TiptapEditor): Command {
+  return function (state, dispatch) {
+    throw new Error("未实现：pasteAllBlocksFromClipboard");
   };
 }
 

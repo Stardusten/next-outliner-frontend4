@@ -3,6 +3,7 @@ import ContextMenuGlobal from "@/components/ContextMenuGlobal";
 import { AppHeader } from "@/components/header/AppHeader";
 import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDialog";
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
+import SettingsPanel from "@/components/SettingsPanel";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 import { useBreadcrumb } from "@/composables/useBreadcrumb";
 import { useImportExport } from "@/composables/useImportExport";
@@ -18,6 +19,7 @@ import { FocusedBlockIdTracker } from "@/lib/tiptap/functionalities/focused-bloc
 import { HighlightCodeblock } from "@/lib/tiptap/functionalities/highlight-codeblock";
 import { NormalKeymap } from "@/lib/tiptap/functionalities/keymap/normal";
 import { PasteHtmlOrPlainText } from "@/lib/tiptap/functionalities/paste-html";
+import PasteImage from "@/lib/tiptap/functionalities/paste-image";
 import { ToCodeblock } from "@/lib/tiptap/functionalities/to-codeblock";
 import { markExtensions } from "@/lib/tiptap/marks";
 import { nodeExtensions } from "@/lib/tiptap/nodes";
@@ -48,6 +50,7 @@ export const MainEditor = (props: Props) => {
         CompositionFix,
         HighlightCodeblock,
         ToCodeblock,
+        PasteImage, // 必须放在 PasteHtmlOrPlainText 前面
         PasteHtmlOrPlainText,
         FocusedBlockIdTracker,
       ],
@@ -89,6 +92,7 @@ export const MainEditor = (props: Props) => {
       <ContextMenuGlobal />
       <ImportConfirmDialog app={props.app} />
       <ClearStorageConfirmDialog app={props.app} />
+      <SettingsPanel />
     </>
   );
 };

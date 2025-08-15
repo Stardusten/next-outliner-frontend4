@@ -8,6 +8,8 @@ import type {
   RepoLLMSettings,
 } from "@/lib/repo/schema";
 import { Brain, Database, Info, PaintRoller, Settings } from "lucide-solid";
+import TestOssConnection from "@/components/settings/TestOssConnection";
+import RepoInfo from "@/components/settings/RepoInfo";
 
 // 设置路径类型
 export type SettingPath =
@@ -79,7 +81,7 @@ export interface InputSetting extends BaseSetting {
   type: "input";
   defaultValue: string;
   placeholder?: string;
-  hidden?: boolean;
+  password?: boolean;
   maxLength?: number;
   readonly?: boolean;
 }
@@ -354,7 +356,7 @@ const settingsConfig: SettingsPageConfig[] = [
             label: "知识库信息",
             settingPath: null,
             noLabel: true,
-            render: () => null,
+            render: () => (RepoInfo as any)({}) as JSX.Element,
           },
         ],
       },
@@ -387,7 +389,7 @@ const settingsConfig: SettingsPageConfig[] = [
             label: "对象存储 Access Key",
             settingPath: "attachment.accessKeyId",
             defaultValue: "",
-            hidden: true,
+            password: true,
             condition: (config) => config.attachment?.storageType === "oss",
           },
           {
@@ -396,7 +398,7 @@ const settingsConfig: SettingsPageConfig[] = [
             label: "对象存储 Secret Key",
             settingPath: "attachment.secretAccessKey",
             defaultValue: "",
-            hidden: true,
+            password: true,
             condition: (config) => config.attachment?.storageType === "oss",
           },
           {
@@ -414,7 +416,8 @@ const settingsConfig: SettingsPageConfig[] = [
             settingPath: null,
             noLabel: true,
             condition: (config) => config.attachment?.storageType === "oss",
-            render: () => null,
+            render: (context) =>
+              (TestOssConnection as any)({ context }) as JSX.Element,
           },
         ],
       },

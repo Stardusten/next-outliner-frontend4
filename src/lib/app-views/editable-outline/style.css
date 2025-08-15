@@ -458,6 +458,14 @@ div.list-item-x pre code .hljs-quote {
   /*font-style: italic;*/
 }
 
+/* 链接样式 */
+a {
+  color: var(--color-link, #0366d6);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
 div.list-item-x pre code .hljs-keyword,
 div.list-item-x pre code .hljs-selector-tag,
 div.list-item-x pre code .hljs-literal,

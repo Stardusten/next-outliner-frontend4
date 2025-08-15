@@ -1,4 +1,26 @@
-import { ValidComponent } from "solid-js";
+import { useI18n } from "@/composables/useI18n";
+import { EXPORT_FORMATS, useImportExport } from "@/composables/useImportExport";
+import { useSettings } from "@/composables/useSettings";
+import { App } from "@/lib/app/app";
+import {
+  Bookmark,
+  BookOpen,
+  Command,
+  Download,
+  History,
+  Menu,
+  MoreHorizontal,
+  Paintbrush,
+  Printer,
+  RotateCcw,
+  RotateCw,
+  Settings,
+  Trash2,
+  Upload,
+} from "lucide-solid";
+import { LineSpacingToggle } from "../LineSpacingToggle";
+import { ThemeToggle } from "../ThemeToggle";
+import { Button, ButtonProps } from "../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,34 +29,9 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-  Bookmark,
-  History,
-  MoreHorizontal,
-  RotateCcw,
-  RotateCw,
-  Download,
-  Upload,
-  Printer,
-  BookOpen,
-  Command,
-  Settings,
-  Trash2,
-  Paintbrush,
-  Menu,
-} from "lucide-solid";
-import { ThemeToggle } from "../ThemeToggle";
-import { LineSpacingToggle } from "../LineSpacingToggle";
-import { useI18n } from "@/composables/useI18n";
-import { EXPORT_FORMATS, useImportExport } from "@/composables/useImportExport";
-import { App } from "@/lib/app/app";
-import { Tooltip } from "../ui/tooltip";
-import { TooltipTrigger } from "../ui/tooltip";
-import { TooltipContent } from "../ui/tooltip";
-import { ButtonProps } from "../ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 type Props = {
-  trigger: ValidComponent;
   app: App;
 };
 
@@ -42,6 +39,7 @@ export const MoreMenu = (props: Props) => {
   const { t } = useI18n();
   const { handleExport, handleImport, handleClearHistory, handleClearStorage } =
     useImportExport(props.app);
+  const { setVisible } = useSettings();
 
   const openInputDialog = () => {
     const input = document.createElement("input");
@@ -62,7 +60,14 @@ export const MoreMenu = (props: Props) => {
       <DropdownMenuTrigger
         as={(p: ButtonProps) => (
           <Tooltip>
-            <TooltipTrigger as={props.trigger} {...p} />
+            <TooltipTrigger
+              as={(p) => (
+                <Button variant="ghost" size="xs-icon" {...p}>
+                  <MoreHorizontal />
+                </Button>
+              )}
+              {...p}
+            />
             <TooltipContent>{t("appHeader.more")}</TooltipContent>
           </Tooltip>
         )}
@@ -143,7 +148,7 @@ export const MoreMenu = (props: Props) => {
           </DropdownMenuShortcut>
         </DropdownMenuItem>
 
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setVisible(true)}>
           <Settings size={14} />
           <span>{t("menu.settings")}</span>
           <DropdownMenuShortcut>

@@ -25,10 +25,13 @@ import {
   promoteSelected,
   redoCommand,
   selectCurrentListItem,
-  splitListItem,
+  splitListItemText,
   toggleFocusedFoldState,
   convertToSearchBlock,
   undoCommand,
+  splitListItemSpecial,
+  stopOnListItemBegin,
+  stopOnListItemEnd,
 } from "../../../app-views/editable-outline/commands";
 import { findCurrListItem } from "../../utils";
 
@@ -62,44 +65,68 @@ export const NormalKeymap = Extension.create({
         Tab: dispatchByBlockType({
           text: chainCommands(demoteSelected(editor), stop),
           code: codeblockIndent(),
+          tag: chainCommands(demoteSelected(editor), stop),
+          search: chainCommands(demoteSelected(editor), stop),
         }),
         "Shift-Tab": dispatchByBlockType({
           text: chainCommands(promoteSelected(editor), stop),
           code: codeblockOutdent(),
+          tag: chainCommands(promoteSelected(editor), stop),
+          search: chainCommands(promoteSelected(editor), stop),
         }),
         Enter: dispatchByBlockType({
-          text: chainCommands(splitListItem(editor), stop),
+          text: chainCommands(splitListItemText(editor), stop),
           code: codeblockInsertLineBreak(),
+          tag: chainCommands(splitListItemSpecial(editor), stop),
+          search: chainCommands(splitListItemSpecial(editor), stop),
         }),
         Backspace: dispatchByBlockType({
           text: chainCommands(
             deleteEmptyListItem(editor),
             mergeWithPreviousBlock(editor),
             deleteSelected(),
-            backspaceAfterCharBeforeExpandedFile()
+            backspaceAfterCharBeforeExpandedFile(),
+            stopOnListItemBegin()
           ),
           code: chainCommands(
             deleteEmptyListItem(editor),
             deleteSelected(),
-            backspaceAfterCharBeforeExpandedFile()
+            backspaceAfterCharBeforeExpandedFile(),
+            stopOnListItemBegin()
+          ),
+          tag: chainCommands(
+            deleteEmptyListItem(editor),
+            stopOnListItemBegin()
+          ),
+          search: chainCommands(
+            deleteEmptyListItem(editor),
+            stopOnListItemBegin()
           ),
         }),
         Delete: dispatchByBlockType({
           text: chainCommands(
             deleteEmptyListItem(editor, "forward"),
             deleteSelected(),
-            deleteBeforeCharBeforeExpandedFile()
+            deleteBeforeCharBeforeExpandedFile(),
+            stopOnListItemEnd()
           ),
           code: chainCommands(
             deleteEmptyListItem(editor),
             deleteSelected(),
-            deleteBeforeCharBeforeExpandedFile()
+            deleteBeforeCharBeforeExpandedFile(),
+            stopOnListItemEnd()
+          ),
+          tag: chainCommands(deleteEmptyListItem(editor), stopOnListItemEnd()),
+          search: chainCommands(
+            deleteEmptyListItem(editor),
+            stopOnListItemEnd()
           ),
         }),
         "Mod-a": dispatchByBlockType({
           text: selectCurrentListItem(editor),
-          search: selectCurrentListItem(editor),
           code: codeblockSelectAll(editor),
+          tag: selectCurrentListItem(editor),
+          search: selectCurrentListItem(editor),
         }),
         "Mod-ArrowUp": chainCommands(toggleFoldTrue, stop),
         "Mod-ArrowDown": chainCommands(toggleFoldFalse, stop),
@@ -117,12 +144,9 @@ export const NormalKeymap = Extension.create({
         End: dispatchByBlockType({
           codeblock: codeblockMoveToLineEnd(),
         }),
-        "Shift-Enter": dispatchByBlockType({
-          text: insertLineBreak(),
-        }),
+        "Shift-Enter": insertLineBreak(),
         "Mod-z": undoCommand(editor),
         "Mod-Shift-z": redoCommand(editor),
-        "Mod-e": convertToSearchBlock(editor),
         "Mod-Shift-x": addToBlockClipboard(editor),
       }),
     ];

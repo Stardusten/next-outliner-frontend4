@@ -2,6 +2,7 @@ const zh_CN = {
   common: {
     cancel: "取消",
     delete: "删除",
+    unknownError: "未知错误",
   },
   deleteConfirmDialog: {
     title: "确认删除",
@@ -38,6 +39,57 @@ const zh_CN = {
   codeblock: {
     copyCode: "复制代码块",
     copied: "代码块已复制到剪贴板",
+  },
+  attachmentMgr: {
+    tooltip: "附件管理",
+    title: "附件任务",
+    nTasks: "共 {{n}} 个任务",
+    clearCompletedTasks: "清空所有",
+    noTask: "暂无任务",
+    noTaskDescription: "当前没有上传/下载任务",
+    upload: "上传",
+    browse: "浏览",
+  },
+  attachment: {
+    storageNotConfigured: "附件存储未配置",
+    uploadingStart: "开始上传文件：{{name}}",
+    uploadSuccess: "文件上传成功：{{filename}}",
+    uploadFailed: "上传失败：{{message}}",
+  },
+  r2: {
+    test: {
+      success: "连接成功",
+      failed: "连接失败",
+      noSuchBucket: "存储桶不存在",
+      invalidAccessKey: "Access Key 无效",
+      signatureMismatch: "Secret Key 无效",
+      networkError: "网络连接失败，请检查 Endpoint",
+      failedWithMessage: "连接失败：{{message}}",
+    },
+  },
+  ossTest: {
+    endpoint: "Endpoint",
+    accessKey: "Access Key",
+    secretKey: "Secret Key",
+    bucket: "Bucket",
+    fillFirst: "请先填写：",
+    testConnection: "测试连接",
+    testing: "测试中...",
+    testFailed: "测试连接失败",
+  },
+  file: {
+    contextMenu: {
+      convertToCard: "转为卡片",
+      convertToPreview: "转为预览",
+      convertToInline: "转为引用",
+      downloadFile: "下载文件",
+      downloadImage: "下载图片",
+      details: "详细信息",
+    },
+    preview: {
+      unsupported: "预览模式暂不支持 {{type}} 文件",
+      loadImageFailed: "无法加载图片预览",
+    },
   },
   blockContextMenu: {
     delete: "删除块",
@@ -79,6 +131,20 @@ const zh_CN = {
     inRefsTagsTooltip: "{{n}} 个反链",
     refreshSearch: "重新搜索",
     bulletTooltip: "右键打开块菜单",
+  },
+  searchBlock: {
+    invalidQuery: "无效的查询表达式",
+    nResults: "{{n}} 条结果",
+  },
+  editSearchQueryPopup: {
+    queryLabel: "搜索查询",
+    queryPlaceholder: "输入查询表达式...",
+    cancel: "取消",
+    save: "保存",
+  },
+  searchViewOptions: {
+    showBlockPath: "显示块路径",
+    showBlockPathDesc: "在搜索结果中显示每个块的路径",
   },
   repoWizard: {
     repoTitleAlreadyUsed: "存在已打开的同名知识库",
@@ -151,6 +217,11 @@ const zh_CN = {
       },
     },
   },
+  settingsRepo: {
+    unknownRepoTitle: "<未知知识库>",
+    unknownRepoId: "<未知 Repo ID>",
+    exportCopied: "知识库配置已复制到剪贴板",
+  },
   appHeader: {
     more: "更多",
   },
@@ -160,6 +231,7 @@ const zh_CN = {
       onlyTextBlockCanBeTagBlock: "只有文本块可以转换为标签块",
       tagBlockCannotHaveChildren: "标签块不能有子块",
     },
+    cannotSplitInMiddle: "非文本块不能在中间分割",
   },
   settings: {
     sidebar: {
@@ -261,6 +333,22 @@ const zh_CN = {
     print: "Cmd + P",
     shortcuts: "Cmd + /",
     settings: "Cmd + ,",
+  },
+  clipboardPopup: {
+    tooltip: "剪贴板",
+    title: "剪贴板",
+    blockCount: "共 {{count}} 个块",
+    pasteAll: "粘贴全部",
+    clearAll: "清空",
+    pasteHere: "粘贴到这里",
+    deleteFromClipboard: "从剪贴板移除",
+    emptyTitle: "剪贴板为空",
+    emptyDescription: "暂无内容",
+    blockCutted: "已剪切：{{content}}",
+    blockAlreadyExists: "已在剪贴板中：{{content}}",
+    noAppFocused: "没有找到聚焦的编辑器或块",
+    blockPasted: "已粘贴：{{content}}",
+    blocksPasted: "已粘贴 {{n}} 个块",
   },
 };
 
