@@ -7,6 +7,7 @@ import {
   EditableOutlineView,
   EditableOutlineViewEvents,
 } from "@/lib/app-views/editable-outline/editable-outline";
+import { useCurrRepoConfig } from "./useCurrRepoConfig";
 
 type BreadcrumbItem = {
   blockId?: BlockId;
@@ -15,7 +16,7 @@ type BreadcrumbItem = {
 
 export const useBreadcrumb = (app: App) => {
   const [mainRoots, setMainRoots] = useMainRoots();
-  const { currentRepo } = useRepoConfigs();
+  const currentRepo = useCurrRepoConfig();
 
   const items = createMemo(() => {
     if (!currentRepo()) throw new Error("No current repo");

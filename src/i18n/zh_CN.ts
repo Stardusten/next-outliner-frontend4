@@ -86,9 +86,25 @@ const zh_CN = {
       downloadImage: "下载图片",
       details: "详细信息",
     },
+    inline: {
+      uploadingSuffix: "（正在上传 {{progress}}%）",
+      failedSuffix: "（上传失败）",
+    },
     preview: {
       unsupported: "预览模式暂不支持 {{type}} 文件",
       loadImageFailed: "无法加载图片预览",
+      uploading: "上传中 {{progress}}%",
+      failed: "上传失败",
+      imageMenu: "图片菜单",
+      deleteImage: "删除图片",
+    },
+    typeText: {
+      image: "图片",
+      video: "视频",
+      audio: "音频",
+      text: "文本",
+      archive: "压缩包",
+      unknown: "未知",
     },
   },
   blockContextMenu: {

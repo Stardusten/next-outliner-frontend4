@@ -325,14 +325,14 @@ class ListItemViewAdapter implements NodeView {
   dispose: () => void;
 
   constructor(props: NodeViewRendererProps) {
-    const dom = document.createElement("div");
+    const container = document.createElement("div");
     this.dispose = render(
       () => <ListItemView node={props.node} editor={props.editor} />,
-      dom
+      container
     );
 
-    this.dom = dom;
-    this.contentDOM = dom.querySelector(".list-item-content");
+    this.dom = container.firstChild as HTMLDivElement;
+    this.contentDOM = container.querySelector(".list-item-content")!;
   }
 
   destroy() {

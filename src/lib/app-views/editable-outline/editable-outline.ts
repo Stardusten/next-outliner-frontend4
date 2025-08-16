@@ -20,6 +20,7 @@ import type { AppView, AppViewId } from "../types";
 import { renderOutline } from "./renderers/basic-outline";
 import { incrementalUpdate } from "./renderers/patchers";
 import { Accessor, createSignal, Setter } from "solid-js";
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 
 declare module "@tiptap/core" {
   interface Editor {
@@ -106,8 +107,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     this.on = this.eb.on;
     this.off = this.eb.off;
     this.deferredContentSyncTask = null;
-    const { currentRepo } = useRepoConfigs();
-    this.repoConfig = currentRepo;
+    this.repoConfig = useCurrRepoConfig(app);
     this.focusedBlockId = createSignal(null);
   }
 

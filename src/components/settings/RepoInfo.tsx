@@ -5,11 +5,11 @@ import { Label } from "@/components/ui/label";
 import { clipboard } from "@/lib/common/clipboard";
 import { showToast } from "@/components/ui/toast";
 import { useI18n } from "@/composables/useI18n";
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 
 export default function RepoInfo() {
   const { t } = useI18n();
-  const repoConfigs = useRepoConfigs();
-  const currentRepo = () => repoConfigs.currentRepo();
+  const currentRepo = useCurrRepoConfig();
 
   const handleExportRepoConfigAsJson = () => {
     const repo = currentRepo();

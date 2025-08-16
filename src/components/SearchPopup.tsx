@@ -198,6 +198,8 @@ export function SearchPopup(props: Props) {
                   searchQuery={searchQuery()}
                   class="text-sm **:text-nowrap! **:text-ellipsis! **:overflow-hidden!"
                   showPath
+                  // 前十个块不启用延迟渲染，防止闪烁
+                  lazyRender={index() >= 10}
                 />
               </div>
             )}

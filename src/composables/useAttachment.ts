@@ -106,13 +106,12 @@ export const useAttachment = (app: App) => {
     } catch (error) {
       const message =
         error instanceof Error
-          ? error.message
+          ? error.message + "\n" + error.stack
           : (t("common.unknownError") as string) ?? "未知错误";
       showToast({
         title: t("attachment.uploadFailed", { message }) as string,
         variant: "destructive",
       });
-      // 不中断调用链
     }
   };
 

@@ -1,3 +1,4 @@
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import { RouteSectionProps } from "@solidjs/router";
 import { createEffect } from "solid-js";
@@ -28,7 +29,7 @@ const applyTheme = (themeValue: string) => {
 };
 
 export const ThemeUpdater = () => {
-  const { currentRepo } = useRepoConfigs();
+  const currentRepo = useCurrRepoConfig();
 
   createEffect(() => {
     const theme = currentRepo()?.ui?.theme ?? "system";

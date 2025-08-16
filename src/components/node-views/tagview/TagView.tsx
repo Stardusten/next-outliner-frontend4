@@ -59,8 +59,8 @@ const TagView = (props: ViewProps) => {
   const blockData = createMemo(() => {
     const id = blockId();
     if (!id) return null;
-    const [getData] = props.editor.appView.app.getReactiveBlockData(id);
-    return getData();
+    const getter = props.editor.appView.app.getReactiveBlockNode(id);
+    return getter()?.getData() ?? null;
   });
 
   const [inheritsText, setInheritsText] = createSignal<string>("");
@@ -329,7 +329,7 @@ class TagViewAdapter implements NodeView {
       dom
     );
     this.dom = dom;
-    this.contentDOM = dom.querySelector(".tag-content");
+    this.contentDOM = dom.querySelector(".tag-content")!;
   }
 
   destroy(): void {

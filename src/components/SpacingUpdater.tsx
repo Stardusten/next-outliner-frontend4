@@ -1,3 +1,4 @@
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import { createEffect } from "solid-js";
 
@@ -11,7 +12,7 @@ const applySpacing = (spacing: string) => {
 };
 
 export const SpacingUpdater = () => {
-  const { currentRepo } = useRepoConfigs();
+  const currentRepo = useCurrRepoConfig();
 
   createEffect(() => {
     const spacing = currentRepo()?.editor?.lineSpacing ?? "normal";

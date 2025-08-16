@@ -85,7 +85,7 @@ function linkify(fragment: Fragment): Fragment {
       while ((match = HTTP_LINK_REGEX.exec(text))) {
         const start = match.index;
         const end = start + match[0].length;
-        const linkMarkType = child.type.schema.marks["link"];
+        const linkMarkType = child.type.schema.marks.link!;
 
         // simply copy across the text from before the match
         if (start > 0) {
@@ -120,7 +120,7 @@ function parseHtml(html: string, schema: Schema) {
   const domParser = ProsemirrorDOMParser.fromSchema(schema);
 
   function addBlock(dom: Node, ctx: Block[], parentId: string | null) {
-    const pNode = schema.nodes.paragraph.create({});
+    const pNode = schema.nodes.paragraph!.create({});
     let pNode2 = domParser.parse(dom, { topNode: pNode });
     if (pNode2.content.size === 0) return;
 
@@ -142,8 +142,8 @@ function parseHtml(html: string, schema: Schema) {
 
   function traverse(node: Node, ctx: Block[], parentId: string | null) {
     if (node instanceof HTMLOListElement || node instanceof HTMLUListElement) {
-      const newCtx = ctx.length === 0 ? ctx : ctx[ctx.length - 1].children;
-      const newParentId = ctx.length === 0 ? parentId : ctx[ctx.length - 1].id;
+      const newCtx = ctx.length === 0 ? ctx : ctx[ctx.length - 1]!.children;
+      const newParentId = ctx.length === 0 ? parentId : ctx[ctx.length - 1]!.id;
       for (const child of (node as HTMLElement).childNodes) {
         traverse(child, newCtx, newParentId); // 对每个子元素递归
       }
@@ -163,7 +163,7 @@ function parseHtml(html: string, schema: Schema) {
           el.remove();
         }
         if (j < childNodes.length) {
-          traverse(childNodes[j], ctx, parentId);
+          traverse(childNodes[j]!, ctx, parentId);
         }
         i = j;
       }
@@ -231,7 +231,7 @@ export const PasteHtmlOrPlainText = Extension.create({
                 // 粘贴了一个块，则我们不创建新块，直接用粘贴的这个块的内容
                 // 替换当前选区
                 const block = parsedTree[0];
-                const pNodeJson = JSON.parse(block.content);
+                const pNodeJson = JSON.parse(block!.content);
                 const pNode = schema.nodeFromJSON(pNodeJson);
                 const tr = view.state.tr;
                 const slice = new Slice(pNode.content, 0, 0);
@@ -245,12 +245,12 @@ export const PasteHtmlOrPlainText = Extension.create({
                     for (let i = 0; i < block.children.length; i++) {
                       const child = block.children[i];
                       const newChildId = tx.createBlockUnder(newBlockId, i, {
-                        type: child.type,
-                        folded: child.folded,
-                        content: child.content,
+                        type: child!.type,
+                        folded: child!.folded,
+                        content: child!.content,
                       });
-                      idMapping.set(child.id, newChildId);
-                      createTree(child, newChildId);
+                      idMapping.set(child!.id, newChildId);
+                      createTree(child!, newChildId);
                     }
                   };
 
@@ -258,16 +258,16 @@ export const PasteHtmlOrPlainText = Extension.create({
                   let prevBlockId = currBlockId;
                   for (let i = 0; i < parsedTree.length; i++) {
                     const block = parsedTree[i];
-                    if (block.parentId == null) {
+                    if (block!.parentId == null) {
                       const rootBlockId = tx.createBlockAfter(prevBlockId, {
-                        type: block.type,
-                        folded: block.folded,
-                        content: block.content,
+                        type: block!.type,
+                        folded: block!.folded,
+                        content: block!.content,
                       });
                       lastRootId = rootBlockId;
                       prevBlockId = rootBlockId;
-                      idMapping.set(block.id, rootBlockId);
-                      createTree(block, rootBlockId);
+                      idMapping.set(block!.id, rootBlockId);
+                      createTree(block!, rootBlockId);
                     }
                   }
 
@@ -327,8 +327,8 @@ export const PasteHtmlOrPlainText = Extension.create({
                   let prevBlockId = currBlockId;
                   for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
-                    const tNode = schema.text(line);
-                    const pNode = schema.nodes.paragraph.create({}, tNode);
+                    const tNode = schema.text(line!);
+                    const pNode = schema.nodes.paragraph!.create({}, tNode);
                     const newBlockId = tx.createBlockAfter(prevBlockId, {
                       type: "text",
                       folded: false,

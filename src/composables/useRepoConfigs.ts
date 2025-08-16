@@ -1,8 +1,7 @@
-import { createSignal, createMemo } from "solid-js";
-import { useNavigate, useParams } from "@solidjs/router";
-import { z } from "zod";
 import { showToast } from "@/components/ui/toast";
 import { repoConfigSchema, type RepoConfig } from "@/lib/repo/schema";
+import { useNavigate } from "@solidjs/router";
+import { createMemo, createSignal } from "solid-js";
 
 const REPO_CONFIGS_STORAGE_KEY = "repo-configs";
 const [_configs, setConfigs] = createSignal<RepoConfig[]>([]);
@@ -74,8 +73,6 @@ export const useRepoConfigs = () => {
     loadConfigsFromStorage();
   }
 
-  const navigate = useNavigate();
-  const params = useParams();
   const configs = createMemo(() => _configs());
 
   // 重新加载配置
@@ -147,7 +144,10 @@ export const useRepoConfigs = () => {
   };
 
   // 打开知识库
-  const openRepo = (repoId: string) => {
+  const openRepo = (
+    navigate: ReturnType<typeof useNavigate>,
+    repoId: string
+  ) => {
     const config = getConfig(repoId);
     const res = repoConfigSchema.safeParse(config);
     if (res.success) {
@@ -160,17 +160,9 @@ export const useRepoConfigs = () => {
     }
   };
 
-  const currentRepo = createMemo(() => {
-    const repoId = params.repoId as string;
-    return getConfig(repoId);
-  });
-
   return {
     // 状态
     configs,
-    currentRepo,
-
-    // 方法
     loadConfigs,
     addConfig,
     removeConfig,

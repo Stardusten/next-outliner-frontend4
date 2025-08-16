@@ -16,6 +16,7 @@ import {
 } from "./tx";
 import { initUndoRedoManager } from "./undo-redo";
 import { initAppViews } from "./views";
+import { useNavigate, useParams } from "@solidjs/router";
 
 export type AppEvents = {
   "tx-committed": {
@@ -33,6 +34,12 @@ export type InitialApp = {
   persistence: Persistence;
   attachmentStorage: AttachmentStorage | null;
   detachedSchema: Schema;
+  route: RouteProps;
+};
+
+export type RouteProps = {
+  params: ReturnType<typeof useParams>;
+  navigate: ReturnType<typeof useNavigate>;
 };
 
 export function createApp(
@@ -45,6 +52,13 @@ export function createApp(
     persistence,
     attachmentStorage,
     detachedSchema,
+    // 由于 prosemirror 编辑器里面没有路由上下文
+    // 因此我们在 app 初始化时将路由相关属性捕获下来
+    // 然后在 prosemirror 编辑器里就可以用了
+    route: {
+      params: useParams(),
+      navigate: useNavigate(),
+    },
   };
 
   const app1 = initEb(app);

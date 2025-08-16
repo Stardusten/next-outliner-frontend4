@@ -1,18 +1,10 @@
 import { Node } from "@tiptap/core";
-import { fileInlineNodeViewRenderer } from "@/components/node-views/FileInlineView";
-import { fileExpandedNodeViewRenderer } from "@/components/node-views/FileExpandedView";
-import { filePreviewNodeViewRenderer } from "@/components/node-views/FilePreviewView";
-import type { NodeView } from "@tiptap/pm/view";
-import type { NodeViewRendererProps } from "@tiptap/core";
-import { imageIcon } from "./icons/image";
-import { videoIcon } from "./icons/video";
-import { audioIcon } from "./icons/audio";
-import { textIcon } from "./icons/text";
-import { archiveIcon } from "./icons/archive";
-import { defaultFileIcon } from "./icons/file";
-import { loadingIcon } from "./icons/loading";
-import { errorIcon } from "./icons/error";
-import type { RepoConfig } from "@/lib/repo/schema";
+import { fileInlineViewRenderer } from "@/components/node-views/FileInlineView";
+import { filePreviewViewRenderer } from "@/components/node-views/file-preview/FilePreviewView";
+import { useSettings } from "@/composables/useSettings";
+import { useRepoConfigs } from "@/composables/useRepoConfigs";
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
+import { App } from "@/lib/app/app";
 
 export const File = Node.create({
   name: "file",
@@ -22,47 +14,33 @@ export const File = Node.create({
   addAttributes() {
     return {
       path: {},
-      displayMode: { default: "inline" }, // inline | expanded | preview
+      displayMode: { default: "inline" }, // inline | preview
       filename: {},
       type: {},
       size: {},
       extraInfo: { default: "" },
-      status: { default: "uploaded" }, // "uploading-{progress}" | "uploaded"
+      status: { default: "uploaded" }, // "uploading-{progress}" | "uploaded" | "failed"
     };
   },
-  renderHTML({ node, HTMLAttributes }) {
-    // todo
-    return ["div", HTMLAttributes, node.attrs.filename];
-  },
   addNodeView() {
-    // 仅在 displayMode === 'inline' 时使用 Solid NodeView；其他模式先走简单占位以保持现状
     return (props) => {
-      const mode = (props.node.attrs as any).displayMode;
-      if (mode === "inline") {
-        return (fileInlineNodeViewRenderer as any)(props);
-      }
-      if (mode === "expanded") {
-        return (fileExpandedNodeViewRenderer as any)(props);
-      }
-      if (mode === "preview") {
-        return (filePreviewNodeViewRenderer as any)(props);
-      }
-      // 简单占位渲染，与 renderHTML 一致：显示文件名
-      class SimpleFileView implements NodeView {
-        dom: HTMLElement;
-        constructor(p: NodeViewRendererProps) {
-          const el = document.createElement("span");
-          el.textContent = (p.node.attrs as any).filename ?? "file";
-          this.dom = el;
-        }
-        destroy() {
-          this.dom.remove();
-        }
-      }
-      return new SimpleFileView(props);
+      const mode = props.node.attrs.displayMode as string;
+      if (mode === "inline") return fileInlineViewRenderer(props);
+      if (mode === "preview") return filePreviewViewRenderer(props);
+      return undefined as any;
     };
   },
 });
+
+export type FileAttrs = {
+  path: string;
+  displayMode: "inline" | "preview" | "expanded";
+  filename: string;
+  type: FileType;
+  size: number;
+  extraInfo: string;
+  status: `uploading-${number}` | "uploaded" | `failed-${number}`;
+};
 
 export type FileType =
   | "image"
@@ -72,7 +50,7 @@ export type FileType =
   | "archive"
   | "unknown";
 
-export function getFileType(path: string): FileType {
+export function inferFileTypeFromPath(path: string): FileType {
   const ext = path.toLowerCase().split(".").pop() || "";
 
   // 图片类型
@@ -130,65 +108,12 @@ export function getFileType(path: string): FileType {
   return "unknown";
 }
 
-export function getFileTypeText(type: FileType): string {
-  switch (type) {
-    case "image":
-      return "图片";
-    case "video":
-      return "视频";
-    case "audio":
-      return "音频";
-    case "text":
-      return "文档";
-    case "archive":
-      return "压缩包";
-    default:
-      return "文件";
-  }
-}
-
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
-}
-
-// 获取文件图标
-export function fileIcon(
-  filename: string,
-  type?: string,
-  size: number = 20
-): string {
-  const fileType = getFileType(filename);
-  switch (fileType) {
-    case "image":
-      return imageIcon(size, size);
-    case "video":
-      return videoIcon(size, size);
-    case "audio":
-      return audioIcon(size, size);
-    case "text":
-      return textIcon(size, size);
-    case "archive":
-      return archiveIcon(size, size);
-    default:
-      return defaultFileIcon(size, size);
-  }
-}
-
-// 根据状态获取图标
-export function getStatusIcon(status: FileStatus, size: number = 20): string {
-  if (status.type === "uploading") {
-    return loadingIcon(size, size);
-  }
-
-  if (status.type === "failed") {
-    return errorIcon(size, size);
-  }
-
-  return defaultFileIcon(size, size);
 }
 
 // 文件状态解析工具
@@ -243,34 +168,28 @@ export function createFileStatus(
   return "uploaded";
 }
 
-export function getFileDisplayMode(
-  type: FileType,
-  config?: RepoConfig
-): string {
-  // 如果没有配置，返回默认值
-  if (!config?.editor) {
-    switch (type) {
-      case "image":
-      case "video":
-      case "audio":
-        return "preview";
-      default:
-        return "expanded";
-    }
-  }
+export function getDefaultDisplayMode(
+  app: App,
+  type: FileType
+): FileAttrs["displayMode"] {
+  const getCurrentRepo = useCurrRepoConfig(app);
+  const currentRepo = getCurrentRepo();
+  if (!currentRepo) return "inline";
 
   switch (type) {
-    case "image":
-      return config.editor.imageFileDefaultDisplayMode || "preview";
-    case "video":
-      return config.editor.videoFileDefaultDisplayMode || "preview";
-    case "audio":
-      return config.editor.audioFileDefaultDisplayMode || "preview";
     case "text":
-      return config.editor.textFileDefaultDisplayMode || "expanded";
+      return currentRepo.editor.textFileDefaultDisplayMode;
     case "archive":
-      return config.editor.archiveFileDefaultDisplayMode || "expanded";
+      return currentRepo.editor.archiveFileDefaultDisplayMode;
+    case "audio":
+      return currentRepo.editor.audioFileDefaultDisplayMode;
+    case "video":
+      return currentRepo.editor.videoFileDefaultDisplayMode;
+    case "image":
+      return currentRepo.editor.imageFileDefaultDisplayMode;
+    case "unknown":
+      return currentRepo.editor.unknownFileDefaultDisplayMode;
     default:
-      return config.editor.unknownFileDefaultDisplayMode || "expanded";
+      return "inline";
   }
 }

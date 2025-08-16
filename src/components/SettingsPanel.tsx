@@ -41,6 +41,7 @@ import type {
   CustomSetting,
   SettingRenderContext,
 } from "@/composables/useSettings";
+import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 
 export const SettingsPanel = () => {
   const {
@@ -56,7 +57,7 @@ export const SettingsPanel = () => {
     evaluateCondition,
   } = useSettings();
 
-  const { currentRepo } = useRepoConfigs();
+  const currentRepo = useCurrRepoConfig();
 
   const renderContext = createMemo<SettingRenderContext>(() => ({
     config: currentRepo()!,

@@ -1,8 +1,8 @@
 import { useContextMenu } from "@/composables/useContextMenu";
 import { useI18n } from "@/composables/useI18n";
 import { clipboard } from "@/lib/common/clipboard";
+import { BlockId } from "@/lib/common/types";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
-import { Node } from "@tiptap/pm/model";
 import { NodeView } from "@tiptap/pm/view";
 import { AtSign, Link } from "lucide-solid";
 import { createMemo, createSignal, Signal } from "solid-js";
@@ -11,29 +11,26 @@ import { showToast } from "../ui/toast";
 
 type BlockRefViewProps = {
   editor: Editor;
-  node: Node;
+  blockId: BlockId;
   selected: boolean;
 };
 
 const BlockRefView = (props: BlockRefViewProps) => {
-  const isTag = () => props.node.attrs.isTag;
-
-  const textContent = createMemo(() => {
+  const blockNode = createMemo(() => {
     const app = props.editor.appView.app;
-    const blockId = props.node.attrs.blockId;
-    const [getTextContent] = app.getTextContentReactive(blockId);
-    return getTextContent();
+    const getter = app.getReactiveBlockNode(props.blockId);
+    return getter();
   });
+  const isTag = () => blockNode()?.getData()?.type === "tag";
+  const textContent = () => blockNode()?.getTextContent() ?? "";
 
   const tagColor = createMemo(() => {
-    const app = props.editor.appView.app;
-    const blockId = props.node.attrs.blockId;
-    const [getData] = app.getReactiveBlockData(blockId);
-    const data = getData();
+    const data = blockNode()?.getData();
     if (!data || data.type !== "tag") return "";
+    const schema = props.editor.appView.app.detachedSchema;
     try {
       const json = JSON.parse(data.content);
-      const snode = app.detachedSchema.nodeFromJSON(json);
+      const snode = schema.nodeFromJSON(json);
       return (snode.attrs?.color as string) || "";
     } catch {
       return "";
@@ -54,9 +51,9 @@ const BlockRefView = (props: BlockRefViewProps) => {
       indigo: `${base} bg-indigo-50 text-indigo-600 dark:bg-indigo-600/20 dark:text-indigo-300`,
       violet: `${base} bg-violet-50 text-violet-600 dark:bg-violet-600/20 dark:text-violet-300`,
       pink: `${base} bg-pink-50 text-pink-600 dark:bg-pink-600/20 dark:text-pink-300`,
-    };
+    } as const;
     const color = tagColor() || "blue";
-    return map[color] ?? map.blue;
+    return map[color] ?? (map.blue as string);
   });
 
   const handleRightClick = (e: MouseEvent) => {
@@ -75,7 +72,7 @@ const BlockRefView = (props: BlockRefViewProps) => {
         label: t("blockRefContextMenu.copyBlockRefId"),
         icon: Link,
         action: () => {
-          clipboard.writeText(props.node.attrs.blockId);
+          clipboard.writeText(props.blockId);
           showToast({
             title: t("blockRefContextMenu.copyBlockRefIdSuccess"),
             variant: "success",
@@ -103,23 +100,24 @@ const BlockRefView = (props: BlockRefViewProps) => {
 
 class BlockRefViewAdapter implements NodeView {
   dom: HTMLSpanElement;
-  contentDOM: HTMLElement;
   dispose: () => void;
   selected: Signal<boolean>; // TODO dispose it
 
   constructor(props: NodeViewRendererProps) {
-    this.dom = document.createElement("span");
+    const container = document.createElement("span");
     this.selected = createSignal(false);
     this.dispose = render(
       () => (
         <BlockRefView
           editor={props.editor}
-          node={props.node}
+          blockId={props.node.attrs.blockId}
           selected={this.selected[0]()}
         />
       ),
-      this.dom
+      container
     );
+
+    this.dom = container.firstChild as HTMLSpanElement;
   }
 
   destroy() {

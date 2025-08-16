@@ -118,6 +118,8 @@ export const CompletionPopup: Component<Props> = (props) => {
                   app={props.editor.app}
                   searchQuery={props.completion.query()}
                   showPath
+                  // 前十个块不启用延迟渲染，防止闪烁
+                  lazyRender={index() >= 10}
                 />
               </div>
             </div>

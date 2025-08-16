@@ -5,7 +5,7 @@ import type {
 } from "@tiptap/core";
 import type { Node as ProseNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
-import { NodeView } from "@tiptap/pm/view";
+import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";
 import { createMemo, createSignal, Show, ValidComponent } from "solid-js";
 import { render } from "solid-js/web";
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -282,7 +282,7 @@ class SearchViewAdapter implements NodeView {
   dispose: () => void;
 
   constructor(props: NodeViewRendererProps) {
-    const dom = document.createElement("div");
+    const container = document.createElement("div");
     this.dispose = render(
       () => (
         <SearchView
@@ -291,10 +291,10 @@ class SearchViewAdapter implements NodeView {
           getPos={props.getPos}
         />
       ),
-      dom
+      container
     );
-    this.dom = dom;
-    this.contentDOM = dom.querySelector(".search-content");
+    this.dom = container.firstChild as HTMLDivElement;
+    this.contentDOM = container.querySelector(".search-content")!;
   }
 
   destroy(): void {
@@ -311,7 +311,7 @@ class SearchViewAdapter implements NodeView {
     return true;
   }
 
-  ignoreMutation(e: MutationRecord) {
+  ignoreMutation(e: ViewMutationRecord) {
     if (
       e.target instanceof HTMLElement &&
       isDescendantOf(e.target, "search-content")

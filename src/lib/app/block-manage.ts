@@ -1,19 +1,29 @@
 import type { Frontiers } from "loro-crdt";
+import { createRoot, createSignal, Signal, type Accessor } from "solid-js";
 import type {
   BlockData,
   BlockDataInner,
   BlockId,
   BlockNode,
 } from "../common/types";
-import type { AppStep2 } from "./app";
-import { createSignal, type Accessor, type Setter } from "solid-js";
+import type { App, AppStep2 } from "./app";
 
-type Signal<T> = [Accessor<T>, Setter<T>];
-type ReactiveBlockData = Signal<BlockDataInner | null>;
+type EnhancedBlockNode = BlockNode & {
+  getTextContent: () => string;
+  getPath: () => BlockId[] | null;
+  getData: () => BlockDataInner | null;
+  dispose: () => void;
+};
+
+type ReactiveBlockNodeInfo = {
+  signal: Signal<EnhancedBlockNode | null>;
+  dispose: () => void;
+  refCount: number;
+};
 
 export function initBlockManageApis(app: AppStep2) {
   const ret = Object.assign(app, {
-    reactiveBlockDataMap: new Map<BlockId, ReactiveBlockData>(),
+    reactiveBlockNodeMap: new Map<BlockId, ReactiveBlockNodeInfo>(),
     getRootBlockNodes: () => app.tree.roots(),
     getRootBlockIds: () => app.tree.roots().map((node) => node.id),
     getBlockNode: (id: BlockId, allowDeleted = false, vv?: Frontiers) =>
@@ -24,24 +34,64 @@ export function initBlockManageApis(app: AppStep2) {
     getBlockData: (id: BlockId, allowDeleted = false, vv?: Frontiers) =>
       getBlockData(app, id, allowDeleted, vv),
     getAllNodes: (withDeleted = false) => getAllNodes(app, withDeleted),
-    getReactiveBlockData: (id: BlockId) => getReactiveBlockData(ret, id),
-    disposeReactiveBlockData: (id: BlockId) =>
-      disposeReactiveBlockData(ret, id),
+    getReactiveBlockNode: (id: BlockId) => getReactiveBlockNode(ret, id),
   });
 
   app.on("tx-committed", (e) => {
+    // 更新 reactiveBlockNode
     for (const op of e.executedOps) {
-      if (op.type === "block:delete") {
-        const blockDataRef = ret.reactiveBlockDataMap.get(op.blockId);
-        if (blockDataRef) {
-          const [, set] = blockDataRef;
+      if (op.type === "block:create") {
+        const nodeInfo = ret.reactiveBlockNodeMap.get(op.blockId);
+        if (nodeInfo) {
+          const [, set] = nodeInfo.signal;
+          const rawNode = app.tree.getNodeByID(op.blockId);
+          if (!rawNode) set(null);
+          else set(enhanceBlockNode(ret, rawNode));
+        }
+      } else if (op.type === "block:delete") {
+        const nodeInfo = ret.reactiveBlockNodeMap.get(op.blockId);
+        if (nodeInfo) {
+          const [, set] = nodeInfo.signal;
           set(null);
         }
       } else if (op.type === "block:update") {
-        const blockDataRef = ret.reactiveBlockDataMap.get(op.blockId);
-        if (blockDataRef) {
-          const [, set] = blockDataRef;
-          set(op.newData);
+        const nodeInfo = ret.reactiveBlockNodeMap.get(op.blockId);
+        if (nodeInfo) {
+          const [, set] = nodeInfo.signal;
+          const rawNode = app.tree.getNodeByID(op.blockId);
+          if (!rawNode) set(null);
+          else set(enhanceBlockNode(ret, rawNode));
+        }
+      } else if (op.type === "block:move") {
+        // 旧 parent
+        if (op.oldParent) {
+          const nodeInfo = ret.reactiveBlockNodeMap.get(op.oldParent);
+          if (nodeInfo) {
+            const [, set] = nodeInfo.signal;
+            const rawNode = app.tree.getNodeByID(op.oldParent);
+            if (!rawNode) set(null);
+            else set(enhanceBlockNode(ret, rawNode));
+          }
+        }
+        // 新 parent
+        if (op.parent) {
+          const nodeInfo = ret.reactiveBlockNodeMap.get(op.parent);
+          if (nodeInfo) {
+            const [, set] = nodeInfo.signal;
+            const rawNode = app.tree.getNodeByID(op.parent);
+            if (!rawNode) set(null);
+            else set(enhanceBlockNode(ret, rawNode));
+          }
+        }
+        // 这个 block 自己
+        {
+          const nodeInfo = ret.reactiveBlockNodeMap.get(op.blockId);
+          if (nodeInfo) {
+            const [, set] = nodeInfo.signal;
+            const rawNode = app.tree.getNodeByID(op.blockId);
+            if (!rawNode) set(null);
+            else set(enhanceBlockNode(ret, rawNode));
+          }
         }
       }
     }
@@ -50,8 +100,11 @@ export function initBlockManageApis(app: AppStep2) {
   return ret;
 }
 
+const x = (() => (Math.random() > 0.5 ? 1 : null)) as Accessor<number | null>;
+const y = x();
+
 type AppWithBlockManageApis = AppStep2 & {
-  reactiveBlockDataMap: Map<BlockId, ReactiveBlockData>;
+  reactiveBlockNodeMap: Map<BlockId, ReactiveBlockNodeInfo>;
   getBlockData: (
     id: BlockId,
     allowDeleted?: boolean,
@@ -59,22 +112,63 @@ type AppWithBlockManageApis = AppStep2 & {
   ) => BlockDataInner | null;
 };
 
-function getReactiveBlockData(app: AppWithBlockManageApis, id: BlockId) {
-  let blockDataRef = app.reactiveBlockDataMap.get(id);
-  if (!blockDataRef) {
-    const data = app.getBlockData(id);
-    blockDataRef = createSignal(data);
-    app.reactiveBlockDataMap.set(id, blockDataRef);
-  }
-  return blockDataRef;
+function enhanceBlockNode(
+  app: AppWithBlockManageApis,
+  blockNode: BlockNode
+): EnhancedBlockNode {
+  const appRef = new WeakRef(app);
+  return Object.assign(blockNode, {
+    getTextContent: () => {
+      const currApp = appRef.deref();
+      if (!currApp) throw new Error("app is not alive");
+      return (currApp as App).getTextContent(blockNode.id); // XXX
+    },
+    getPath: () => {
+      const currApp = appRef.deref();
+      if (!currApp) throw new Error("app is not alive");
+      return getBlockPath(currApp, blockNode.id);
+    },
+    getData: () => blockNode.data.toJSON() as BlockDataInner | null,
+    dispose: () => {
+      const currApp = appRef.deref();
+      if (!currApp) throw new Error("app is not alive");
+      disposeReactiveBlockNode(currApp, blockNode.id);
+    },
+  });
 }
 
-function disposeReactiveBlockData(app: AppWithBlockManageApis, id: BlockId) {
-  const blockDataRef = app.reactiveBlockDataMap.get(id);
-  if (blockDataRef) {
-    app.reactiveBlockDataMap.delete(id);
-    const [, set] = blockDataRef;
-    set(null);
+function getReactiveBlockNode(app: AppWithBlockManageApis, id: BlockId) {
+  let nodeInfo = app.reactiveBlockNodeMap.get(id);
+  if (!nodeInfo) {
+    let disposeRoot: (() => void) | null = null;
+    const signal = createRoot((dispose) => {
+      disposeRoot = dispose;
+      const node = getBlockNode(app, id);
+      return createSignal(node ? enhanceBlockNode(app, node) : null);
+    });
+
+    nodeInfo = {
+      signal,
+      dispose: disposeRoot!,
+      refCount: 1,
+    };
+    app.reactiveBlockNodeMap.set(id, nodeInfo);
+  } else {
+    nodeInfo.refCount++;
+  }
+  return nodeInfo.signal[0] as Accessor<EnhancedBlockNode | null>;
+}
+
+function disposeReactiveBlockNode(app: AppWithBlockManageApis, id: BlockId) {
+  const nodeInfo = app.reactiveBlockNodeMap.get(id);
+  if (nodeInfo) {
+    nodeInfo.refCount--;
+    if (nodeInfo.refCount <= 0) {
+      app.reactiveBlockNodeMap.delete(id);
+      const [, set] = nodeInfo.signal;
+      set(null);
+      nodeInfo.dispose();
+    }
   }
 }
 

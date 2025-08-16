@@ -10,6 +10,7 @@ import type {
 import { Brain, Database, Info, PaintRoller, Settings } from "lucide-solid";
 import TestOssConnection from "@/components/settings/TestOssConnection";
 import RepoInfo from "@/components/settings/RepoInfo";
+import { useCurrRepoConfig } from "./useCurrRepoConfig";
 
 // 设置路径类型
 export type SettingPath =
@@ -523,7 +524,8 @@ const [visible, setVisible] = createSignal(false);
 const [currentPage, setCurrentPage] = createSignal(settingsConfig[0]?.id || "");
 
 export function useSettings() {
-  const { currentRepo, addConfig } = useRepoConfigs();
+  const { addConfig } = useRepoConfigs();
+  const currentRepo = useCurrRepoConfig();
 
   // 获取嵌套属性的值
   const getNestedValue = (obj: any, path: string): any => {

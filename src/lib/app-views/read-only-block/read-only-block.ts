@@ -36,7 +36,7 @@ export class ReadonlyBlockView implements AppView {
 
     // 我们用 fastListItem，使用纯 js 实现，渲染速度快得多
     const fastListItem = this.#toFastListItem(blockNode);
-    const doc = this.tiptap.schema.nodes.doc.create({}, [fastListItem]);
+    const doc = this.tiptap.schema.nodes.doc!.create({}, [fastListItem]);
     this.tiptap.commands.setContent(doc);
 
     this.updateHighlightTerms(); // 初始化高亮
@@ -71,7 +71,7 @@ export class ReadonlyBlockView implements AppView {
     const blockData = blockNode.data.toJSON() as BlockDataInner;
     const json = JSON.parse(blockData.content);
     const node = schema.nodeFromJSON(json);
-    const fastListItemNode = this.tiptap.schema.nodes.fastListItem.create(
+    const fastListItemNode = this.tiptap.schema.nodes.fastListItem!.create(
       {
         level: 0,
         blockId: blockNode.id,

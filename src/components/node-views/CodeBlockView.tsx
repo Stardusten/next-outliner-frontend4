@@ -97,7 +97,7 @@ class CodeBlockViewAdapter implements NodeView {
   dispose: () => void;
 
   constructor(props: NodeViewRendererProps) {
-    const dom = document.createElement("div");
+    const container = document.createElement("div");
     this.dispose = render(
       () => (
         <CodeBlockView
@@ -106,11 +106,11 @@ class CodeBlockViewAdapter implements NodeView {
           getPos={props.getPos}
         />
       ),
-      dom
+      container
     );
 
-    this.dom = dom;
-    this.contentDOM = dom.querySelector(".codeblock-content");
+    this.dom = container.firstChild as HTMLDivElement;
+    this.contentDOM = container.querySelector(".codeblock-content")!;
   }
 
   destroy() {

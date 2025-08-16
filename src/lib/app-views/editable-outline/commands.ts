@@ -6,7 +6,11 @@ import { NodeSelection, TextSelection, type Command } from "@tiptap/pm/state";
 import type { AttachmentTaskInfo } from "../../app/attachment/storage";
 import type { BlockDataInner, BlockId, BlockNode } from "../../common/types";
 import { Codeblock } from "../../tiptap/nodes/codeblock";
-import { File, getFileDisplayMode, getFileType } from "../../tiptap/nodes/file";
+import {
+  File,
+  getDefaultDisplayMode,
+  inferFileTypeFromPath as inferFileTypeFromFilename,
+} from "../../tiptap/nodes/file";
 import { ListItem } from "../../tiptap/nodes/list-item";
 import { Search, type SearchAttrs } from "../../tiptap/nodes/search";
 import {
@@ -18,6 +22,7 @@ import type { AppViewId } from "../types";
 import { useI18n } from "@/composables/useI18n";
 import { showToast } from "@/components/ui/toast";
 import { useBlockClipboard } from "@/composables/useBlockClipboard";
+import { useAttachment } from "@/composables/useAttachment";
 
 /**
  * 判断一个 List Item Node 内容是不是空的
@@ -1047,14 +1052,26 @@ export function setImageWidth(pos: number, width: number): Command {
   };
 }
 
+export function deleteFile(pos: number): Command {
+  return function (state, dispatch) {
+    const node = state.doc.nodeAt(pos);
+    const fileType = state.schema.nodes.file;
+    if (node && node.type.name === fileType.name) {
+      const tr = state.tr.delete(pos, pos + node.nodeSize);
+      dispatch && dispatch(tr);
+      return true;
+    }
+    return false;
+  };
+}
+
 export async function uploadFile(
   editor: TiptapEditor,
   getFile: () => Promise<File>
 ) {
   const { appView: appview } = editor;
-  const storage = appview.app.attachmentStorage;
   const { t } = useI18n();
-  if (!storage) {
+  if (!appview.app.attachmentStorage) {
     showToast({
       title: t("attachment.storageNotConfigured") as string,
       variant: "destructive",
@@ -1065,46 +1082,46 @@ export async function uploadFile(
   const file = await getFile();
   if (!file) return;
 
-  // 必须在段落内
+  // 检查当前是否在列表项中
   const currListItem = findCurrListItem(editor.state);
   if (!currListItem) return;
 
+  // 当任务创建时插入文件节点
   let taskId: string | null = null;
   const fileType = editor.schema.nodes.file;
 
-  const offAll = () => {
-    storage.off("task:created", onTaskCreated);
-    storage.off("task:progress", onTaskProgress);
-    storage.off("task:completed", onTaskCompleted);
-    storage.off("task:failed", onTaskFailed);
-  };
-
   const onTaskCreated = (task: AttachmentTaskInfo) => {
-    // 仅处理当前文件名的任务（粗略匹配，必要时可增强）
-    if (task.filename !== file.name) return;
+    // 开始执行就立刻移除监听器，确保只执行一次
+    appview.app.attachmentStorage?.off("task:created", onTaskCreated);
+
+    // 记录任务 ID，用于后续的文件节点更新
     taskId = task.id;
 
-    // 插入 inline 文件节点，状态 uploading-0
+    // 插入 inline 文件节点，状态为 uploading-0
     const tr = editor.state.tr;
-    const node = fileType.create({
+    const fileNode = fileType.create({
       path: task.path,
-      displayMode: getFileDisplayMode(getFileType(task.filename)),
+      displayMode: getDefaultDisplayMode(
+        appview.app,
+        inferFileTypeFromFilename(task.filename)
+      ),
       filename: task.filename,
-      type: getFileType(task.path),
+      type: inferFileTypeFromFilename(task.filename),
       size: task.size,
       status: "uploading-0",
     });
-    tr.replaceSelectionWith(node);
+    tr.replaceSelectionWith(fileNode);
     editor.view.dispatch(tr);
-    // 只需创建一次
-    storage.off("task:created", onTaskCreated);
   };
 
   const onTaskProgress = (task: AttachmentTaskInfo) => {
-    if (taskId == null || task.id !== taskId) return;
-    if (task.progress == null) return;
+    // 如果任务 ID 不匹配，说明不是当前任务，直接返回
+    if (task.id !== taskId) return;
 
-    let found: [Node, number] | null = null;
+    if (task.progress === undefined) return;
+
+    let found: any = null;
+
     editor.state.doc.descendants((node, pos) => {
       if (found) return false;
       if (
@@ -1115,22 +1132,30 @@ export async function uploadFile(
         return false;
       }
     });
+
     if (found) {
-      const [fn, pos] = found;
+      const [fileNode, filePos]: [Node, number] = found;
       const newAttrs = {
-        ...(fn.attrs as any),
-        status: `uploading-${Math.round(task.progress!)}`,
+        ...(fileNode.attrs as any),
+        status: `uploading-${Math.round(task.progress)}`,
       };
-      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+
+      const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
       editor.view.dispatch(tr);
     }
   };
 
   const onTaskCompleted = (task: AttachmentTaskInfo) => {
-    if (taskId == null || task.id !== taskId) return;
-    offAll();
+    // 如果任务 ID 不匹配，说明不是当前任务，直接返回
+    if (task.id !== taskId) return;
 
-    let found: [Node, number] | null = null;
+    // 移除监听器
+    appview.app.attachmentStorage?.off("task:completed", onTaskCompleted);
+    appview.app.attachmentStorage?.off("task:progress", onTaskProgress);
+
+    // 在文档中找到对应的文件节点并更新
+    let found: any = null;
+
     editor.state.doc.descendants((node, pos) => {
       if (found) return false;
       if (
@@ -1138,26 +1163,35 @@ export async function uploadFile(
         (node.attrs as any).path === task.path
       ) {
         found = [node, pos];
-        return false;
+        return false; // 停止遍历
       }
     });
+
     if (found) {
-      const [fn, pos] = found;
+      const [fileNode, filePos]: [Node, number] = found;
+      const currentAttrs = fileNode.attrs as any;
       const newAttrs = {
-        ...(fn.attrs as any),
-        path: task.path,
+        ...currentAttrs,
+        path: task.path, // 更新为真实的 path
         status: "uploaded",
       };
-      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+
+      const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
       editor.view.dispatch(tr);
     }
   };
 
   const onTaskFailed = (task: AttachmentTaskInfo) => {
-    if (taskId == null || task.id !== taskId) return;
-    offAll();
+    // 如果任务 ID 不匹配，说明不是当前任务，直接返回
+    if (task.id !== taskId) return;
 
-    let found: [Node, number] | null = null;
+    // 移除监听器
+    appview.app.attachmentStorage?.off("task:failed", onTaskFailed);
+    appview.app.attachmentStorage?.off("task:progress", onTaskProgress);
+
+    // 在文档中找到对应的文件节点并更新状态
+    let found: any = null;
+
     editor.state.doc.descendants((node, pos) => {
       if (found) return false;
       if (
@@ -1168,25 +1202,28 @@ export async function uploadFile(
         return false;
       }
     });
+
     if (found) {
-      const [fn, pos] = found;
+      const [fileNode, filePos]: [Node, number] = found;
       const newAttrs = {
-        ...(fn.attrs as any),
+        ...(fileNode.attrs as any),
         status: "failed-1",
       };
-      const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+
+      const tr = editor.state.tr.setNodeMarkup(filePos, undefined, newAttrs);
       editor.view.dispatch(tr);
     }
   };
 
-  // 注册
-  storage.on("task:created", onTaskCreated);
-  storage.on("task:progress", onTaskProgress);
-  storage.on("task:completed", onTaskCompleted);
-  storage.on("task:failed", onTaskFailed);
+  // 注册所有事件监听器
+  appview.app.attachmentStorage?.on("task:created", onTaskCreated);
+  appview.app.attachmentStorage?.on("task:completed", onTaskCompleted);
+  appview.app.attachmentStorage?.on("task:failed", onTaskFailed);
+  appview.app.attachmentStorage?.on("task:progress", onTaskProgress);
 
-  // 触发上传
-  await storage.upload(file);
+  // 直接上传文件，不需要确认对话框
+  const attachment = useAttachment(appview.app);
+  await attachment.upload(file, false);
 }
 
 export function changeFileDisplayMode(

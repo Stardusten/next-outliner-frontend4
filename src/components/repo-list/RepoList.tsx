@@ -5,8 +5,10 @@ import { Eye, Trash2 } from "lucide-solid";
 import { createMemo } from "solid-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"; // Ensure this path is correct
 import DeleteConfirmDialog from "./DeleteConfirmDialog"; // Ensure this path is correct
+import { useNavigate } from "@solidjs/router";
 
 const RepoList = () => {
+  const navigate = useNavigate();
   const { configs, openRepo } = useRepoConfigs();
   const { t } = useI18n();
   const hasConfigs = createMemo(() => configs().length > 0);
@@ -47,7 +49,7 @@ const RepoList = () => {
                         variant="ghost"
                         class="size-7 text-muted-foreground hover:text-muted-foreground hover:bg-muted-foreground/10"
                         size="icon"
-                        onClick={() => openRepo(config.id)}
+                        onClick={() => openRepo(navigate, config.id)}
                       >
                         <Eye class="size-4" />
                       </Button>

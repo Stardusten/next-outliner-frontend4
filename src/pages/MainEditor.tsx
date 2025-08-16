@@ -50,8 +50,8 @@ export const MainEditor = (props: Props) => {
         CompositionFix,
         HighlightCodeblock,
         ToCodeblock,
-        PasteImage, // 必须放在 PasteHtmlOrPlainText 前面
         PasteHtmlOrPlainText,
+        PasteImage,
         FocusedBlockIdTracker,
       ],
     });
