@@ -13,17 +13,11 @@ import { nanoid } from "nanoid";
 import { isEmptyListItem } from "../../app-views/editable-outline/commands";
 import { contentNodeToStrAndType, findCurrListItem } from "../utils";
 
+// == 常量
+
 const PASTE_HTML_OR_PLAIN_TEXT_NAME = "pasteHtmlOrPlainText";
-
-type Block = {
-  id: string;
-  type: "text" | "code" | "search" | "tag";
-  folded: boolean;
-  content: string;
-  parentId: string | null;
-  children: Block[];
-};
-
+const HTTP_LINK_REGEX =
+  /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([^\s]*)/g;
 const blockTags: { [tagName: string]: boolean } = {
   ADDRESS: true,
   ARTICLE: true,
@@ -69,11 +63,37 @@ const ignoreTags: { [tagName: string]: boolean } = {
   TITLE: true,
 };
 
-const HTTP_LINK_REGEX =
-  /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}(\.[a-zA-Z0-9()]{1,6})?\b([^\s]*)/g;
+// == 类型
 
-function linkify(fragment: Fragment): Fragment {
+type Block = {
+  id: string;
+  type: "text" | "code" | "search" | "tag";
+  folded: boolean;
+  content: string;
+  parentId: string | null;
+  children: Block[];
+};
+
+type LinkPreview = {
+  domain: string;
+  title: string;
+  url: string;
+};
+
+// === 工具函数
+
+function tabToSpaces(text: string, indent: number) {
+  return text.replace(/\t/g, " ".repeat(indent));
+}
+
+function normalizeSpaces(text: string) {
+  return text.replace(/\s/g, " ");
+}
+
+function linkify(fragment: Fragment, linkPreview?: LinkPreview): Fragment {
   const linkified: ProseMirrorNode[] = [];
+  const schema = fragment.firstChild!.type.schema;
+  const linkMarkType = schema.marks.link!;
 
   fragment.forEach((child) => {
     if (child.isText) {
@@ -81,38 +101,37 @@ function linkify(fragment: Fragment): Fragment {
       let pos = 0,
         match;
 
-      // eslint-disable-next-line no-cond-assign
       while ((match = HTTP_LINK_REGEX.exec(text))) {
         const start = match.index;
         const end = start + match[0].length;
-        const linkMarkType = child.type.schema.marks.link!;
 
-        // simply copy across the text from before the match
         if (start > 0) {
           linkified.push(child.cut(pos, start));
         }
 
         const urlText = text.slice(start, end);
         const linkMark = linkMarkType.create({ href: urlText });
-        linkified.push(
-          child.cut(start, end).mark(linkMark.addToSet(child.marks))
-        );
+        // 如果提供了 linkPreview，且 url 与 linkPreview.url 相同，则使用 linkPreview.title 作为锚文本
+        const content =
+          linkPreview && linkPreview.url === urlText
+            ? schema.text(linkPreview.title)
+            : child.cut(start, end);
+        linkified.push(content.mark(linkMark.addToSet(child.marks)));
         pos = end;
       }
 
-      // copy over whatever is left
       if (pos < text.length) {
         linkified.push(child.cut(pos));
       }
     } else {
-      linkified.push(child.copy(linkify(child.content)));
+      linkified.push(child.copy(linkify(child.content, linkPreview)));
     }
   });
 
   return Fragment.fromArray(linkified);
 }
 
-function parseHtml(html: string, schema: Schema) {
+function parseHtml(html: string, schema: Schema, linkPreview?: LinkPreview) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
   const ctx: Block[] = [];
@@ -125,7 +144,7 @@ function parseHtml(html: string, schema: Schema) {
     if (pNode2.content.size === 0) return;
 
     // 解析链接
-    const linkified = linkify(pNode2.content);
+    const linkified = linkify(pNode2.content, linkPreview);
     const slice = Slice.maxOpen(linkified);
     pNode2 = pNode2.replace(0, pNode2.content.size, slice);
 
@@ -178,14 +197,6 @@ function parseHtml(html: string, schema: Schema) {
   return [ctx, blocks] as const;
 }
 
-function tabToSpaces(text: string, indent: number) {
-  return text.replace(/\t/g, " ".repeat(indent));
-}
-
-function normalizeSpaces(text: string) {
-  return text.replace(/\s/g, " ");
-}
-
 export const PasteHtmlOrPlainText = Extension.create({
   name: PASTE_HTML_OR_PLAIN_TEXT_NAME,
   addProseMirrorPlugins() {
@@ -200,15 +211,22 @@ export const PasteHtmlOrPlainText = Extension.create({
             event.stopImmediatePropagation();
 
             const schema = editor.appView.tiptap?.schema!;
-
             const currListItem = findCurrListItem(view.state);
             const currBlockId = currListItem?.node.attrs.blockId ?? null;
+
             if (currListItem == null || currBlockId == null) return true;
 
-            // 在代码块中粘贴，不会创建出多个块
-            if (
-              currListItem.node?.firstChild?.type === schema.nodes.codeblock
-            ) {
+            // 解析 text/link-preview 数据，用于粘贴连接时获得标题
+            const linkPreviewStr =
+              event.clipboardData?.getData("text/link-preview");
+            const linkPreview: LinkPreview | undefined = linkPreviewStr
+              ? JSON.parse(linkPreviewStr)
+              : undefined;
+
+            // 在代码块中粘贴
+            const pasteInCodeBlock =
+              currListItem.node?.firstChild?.type === schema.nodes.codeblock;
+            if (pasteInCodeBlock) {
               let text = event.clipboardData?.getData("text/plain");
               if (text) {
                 text = tabToSpaces(text, 2);
@@ -216,20 +234,22 @@ export const PasteHtmlOrPlainText = Extension.create({
                 tr.replaceSelectionWith(schema.text(text));
                 view.dispatch(tr);
               }
-              schema;
               return true;
             }
 
+            // 粘贴了 html 内容?
             const html = event.clipboardData?.getData("text/html");
-            // 粘贴了 html 内容
             if (html) {
-              const [parsedTree, parsedBlocks] = parseHtml(html, schema);
+              const [parsedTree, parsedBlocks] = parseHtml(
+                html,
+                schema,
+                linkPreview
+              );
               const cnt = Object.keys(parsedBlocks).length; // 解析出多少个块
 
               if (cnt <= 0) return true;
               else if (cnt == 1) {
-                // 粘贴了一个块，则我们不创建新块，直接用粘贴的这个块的内容
-                // 替换当前选区
+                // 粘贴了一个块，则我们不创建新块，直接用粘贴的这个块的内容替换当前选区
                 const block = parsedTree[0];
                 const pNodeJson = JSON.parse(block!.content);
                 const pNode = schema.nodeFromJSON(pNodeJson);
@@ -238,9 +258,9 @@ export const PasteHtmlOrPlainText = Extension.create({
                 tr.replaceSelection(slice);
                 view.dispatch(tr);
               } else {
+                // 粘贴了多于一个块，则粘贴所有块到当前块下方
                 const idMapping = new Map<string, BlockId>(); // old id -> new id
                 withTx(editor.appView.app, (tx) => {
-                  // 粘贴了多于一个块，则粘贴所有块到当前块下方
                   const createTree = (block: Block, newBlockId: BlockId) => {
                     for (let i = 0; i < block.children.length; i++) {
                       const child = block.children[i];
@@ -300,9 +320,9 @@ export const PasteHtmlOrPlainText = Extension.create({
               return true;
             }
 
+            // 粘贴了纯文本内容?
             const text = event.clipboardData?.getData("text/plain");
             if (text) {
-              // 粘贴了纯文本内容
               const lines = text
                 .split("\n")
                 .map((s) => normalizeSpaces(s.trim()))
@@ -314,7 +334,7 @@ export const PasteHtmlOrPlainText = Extension.create({
 
                 // 解析链接
                 let frag = Fragment.from([schema.text(text)]);
-                frag = linkify(frag);
+                frag = linkify(frag, linkPreview);
                 schema;
                 const slice = Slice.maxOpen(frag);
 

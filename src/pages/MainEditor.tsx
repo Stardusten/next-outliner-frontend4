@@ -20,6 +20,7 @@ import { HighlightCodeblock } from "@/lib/tiptap/functionalities/highlight-codeb
 import { NormalKeymap } from "@/lib/tiptap/functionalities/keymap/normal";
 import { PasteHtmlOrPlainText } from "@/lib/tiptap/functionalities/paste-html";
 import PasteImage from "@/lib/tiptap/functionalities/paste-image";
+import { SafariImeSpan } from "@/lib/tiptap/functionalities/safari-ime-span";
 import { ToCodeblock } from "@/lib/tiptap/functionalities/to-codeblock";
 import { markExtensions } from "@/lib/tiptap/marks";
 import { nodeExtensions } from "@/lib/tiptap/nodes";
@@ -46,6 +47,7 @@ export const MainEditor = (props: Props) => {
         ...nodeExtensions,
         ...markExtensions,
         NormalKeymap,
+        SafariImeSpan,
         BlockRefCompletion,
         CompositionFix,
         HighlightCodeblock,
