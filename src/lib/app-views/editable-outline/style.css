@@ -411,6 +411,20 @@ div.list-item-x.level-15 {
     calc(-11px - 16 * 32px) 0px 0px var(--color-background);
 }
 
+span.block-ref:not(.tag) {
+  color: var(--color-block-ref);
+  text-decoration: underline;
+  text-decoration-color: var(--color-block-ref-dash);
+  text-decoration-style: dashed;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+span.block-ref:not(.tag):hover,
+span.block-ref:not(.tag).selected {
+  background-color: var(--color-muted);
+}
+
 /* 块引用计数 */
 div.list-item-x > div.ref-counter {
   position: absolute;
@@ -462,7 +476,7 @@ div.list-item-x pre code .hljs-quote {
 a {
   color: var(--color-link, #0366d6);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 4px;
   text-decoration-thickness: 1px;
 }
 
@@ -519,4 +533,82 @@ div.list-item-x pre code .hljs-emphasis {
 
 div.list-item-x pre code .hljs-strong {
   font-weight: bold;
+}
+
+/* 标签颜色样式 */
+span.block-ref.tag {
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  font-size: var(--tag-font-size);
+  opacity: 0.8;
+}
+
+span.block-ref.tag:hover {
+  opacity: 1;
+}
+
+/* 标签颜色映射 */
+span.block-ref.tag {
+  background-color: color-mix(in oklab, var(--tag-bg8) 20%, transparent);
+  color: var(--tag-foreground8);
+}
+
+span.block-ref.tag.tag-color-1 {
+  background-color: color-mix(in oklab, var(--tag-bg1) 20%, transparent);
+  color: var(--tag-foreground1);
+}
+
+span.block-ref.tag.tag-color-2 {
+  background-color: color-mix(in oklab, var(--tag-bg2) 20%, transparent);
+  color: var(--tag-foreground2);
+}
+
+span.block-ref.tag.tag-color-3 {
+  background-color: color-mix(in oklab, var(--tag-bg3) 20%, transparent);
+  color: var(--tag-foreground3);
+}
+
+span.block-ref.tag.tag-color-4 {
+  background-color: color-mix(in oklab, var(--tag-bg4) 20%, transparent);
+  color: var(--tag-foreground4);
+}
+
+span.block-ref.tag.tag-color-5 {
+  background-color: color-mix(in oklab, var(--tag-bg5) 20%, transparent);
+  color: var(--tag-foreground5);
+}
+
+span.block-ref.tag.tag-color-6 {
+  background-color: color-mix(in oklab, var(--tag-bg6) 20%, transparent);
+  color: var(--tag-foreground6);
+}
+
+span.block-ref.tag.tag-color-7 {
+  background-color: color-mix(in oklab, var(--tag-bg7) 20%, transparent);
+  color: var(--tag-foreground7);
+}
+
+span.block-ref.tag.tag-color-8 {
+  background-color: color-mix(in oklab, var(--tag-bg8) 20%, transparent);
+  color: var(--tag-foreground8);
+}
+
+span.block-ref.tag.tag-color-9 {
+  background-color: color-mix(in oklab, var(--tag-bg9) 20%, transparent);
+  color: var(--tag-foreground9);
+}
+
+span.block-ref.tag.tag-color-10 {
+  background-color: color-mix(in oklab, var(--tag-bg10) 20%, transparent);
+  color: var(--tag-foreground10);
+}
+
+span.block-ref.tag.tag-color-11 {
+  background-color: color-mix(in oklab, var(--tag-bg11) 20%, transparent);
+  color: var(--tag-foreground11);
+}
+
+span.block-ref.tag.tag-color-12 {
+  background-color: color-mix(in oklab, var(--tag-bg12) 20%, transparent);
+  color: var(--tag-foreground12);
 }

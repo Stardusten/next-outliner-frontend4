@@ -1,12 +1,4 @@
 import { For, Show } from "solid-js";
-import { Button, ButtonProps } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Paintbrush } from "lucide-solid";
-import { TextField, TextFieldInput } from "@/components/ui/text-field";
 
 export type ColorOption = { key: string; bg: string; isNone?: boolean };
 
@@ -43,10 +35,6 @@ export default function ColorSection(props: {
   colorOptions: ColorOption[];
   getSelectedColor: () => string;
   onSelectColor: (key: string) => void;
-  isCustomSelected: () => boolean;
-  onOpenColorPicker: () => void;
-  colorInputRef: (el: HTMLInputElement) => void;
-  onColorInput: (e: InputEvent) => void;
 }) {
   return (
     <div class="space-y-1">
@@ -64,40 +52,6 @@ export default function ColorSection(props: {
             />
           )}
         </For>
-
-        <Tooltip>
-          <TooltipTrigger
-            as={(p: ButtonProps) => (
-              <Button
-                {...p}
-                variant="outline"
-                size="xs-icon"
-                class={`rounded-full ${
-                  props.isCustomSelected()
-                    ? "ring-2 ring-offset-2 ring-offset-background ring-foreground text-white"
-                    : ""
-                }`}
-                style={
-                  props.isCustomSelected()
-                    ? { background: props.getSelectedColor() }
-                    : undefined
-                }
-                onClick={props.onOpenColorPicker}
-              >
-                <Paintbrush class="size-4" />
-                <TextField class="invisible -ml-10">
-                  <TextFieldInput
-                    ref={props.colorInputRef}
-                    type="color"
-                    value={props.getSelectedColor()}
-                    onInput={props.onColorInput}
-                  />
-                </TextField>
-              </Button>
-            )}
-          />
-          <TooltipContent>{props.t("tag.customColor")}</TooltipContent>
-        </Tooltip>
       </div>
     </div>
   );

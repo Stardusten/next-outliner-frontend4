@@ -55,7 +55,12 @@ export function useBlockRefCompletion(app: App) {
       setCompletionQuery(status.query);
       const coords = editor.coordAtPos(status.from);
       setCompletionPosition({ x: coords.left, y: coords.bottom + 4 });
-      debouncedLoadAvailableBlocks(editor, status.query);
+
+      // 如果事件来自 compositionend，直接加载可用块而不使用防抖
+      if (status.fromCompositionEnd)
+        immediateLoadAvailableBlocks(editor, status.query);
+      else debouncedLoadAvailableBlocks(editor, status.query);
+
       setCompletionActiveIndex(0);
     } else {
       setCompletionVisible(false);
@@ -124,6 +129,19 @@ export function useBlockRefCompletion(app: App) {
       }
     }
     setAvailableBlocks(blocks);
+  };
+
+  // 直接加载可用块（清除计时器并立即加载）
+  const immediateLoadAvailableBlocks = (
+    editor: EditableOutlineView,
+    query?: string
+  ) => {
+    // 清除防抖定时器，避免重复加载
+    if (debounceTimer) {
+      window.clearTimeout(debounceTimer);
+      debounceTimer = undefined;
+    }
+    loadAvailableBlocks(editor, query);
   };
 
   // 防抖版本的加载可用块

@@ -63,7 +63,7 @@ export function executeCompletion(blockId: string, view: EditorView): boolean {
   }
 
   const { from, to, isTag } = completionStatus;
-  const blockRefNode = state.schema.nodes.blockRef.create({
+  const blockRefNode = state.schema.nodes.blockRef!.create({
     blockId,
     isTag: isTag || false,
   });
@@ -97,6 +97,7 @@ export const BlockRefCompletion = Extension.create({
         view(view) {
           const handleCompositionEnd = () => {
             const status = checkCompletionStatus(view.state);
+            if (status) status.fromCompositionEnd = true;
             editor.appView.eb.emit("completion", { status });
             return status;
           };

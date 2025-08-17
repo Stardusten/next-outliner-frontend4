@@ -1,12 +1,12 @@
 import CompletionPopup from "@/components/CompletionPopup";
 import ContextMenuGlobal from "@/components/ContextMenuGlobal";
+import { DeleteBlockConfirm } from "@/components/DeleteBlockConfirm";
 import { AppHeader } from "@/components/header/AppHeader";
 import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDialog";
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
 import SettingsPanel from "@/components/SettingsPanel";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 import { useBreadcrumb } from "@/composables/useBreadcrumb";
-import { useImportExport } from "@/composables/useImportExport";
 import { useMainRoots } from "@/composables/useMainRoots";
 import {
   EditableOutlineView,
@@ -31,7 +31,7 @@ type Props = {
 };
 
 export const MainEditor = (props: Props) => {
-  let editorContainer: HTMLDivElement;
+  let editorContainer!: HTMLDivElement;
   const [mainEditorView, setMainEditorView] =
     createSignal<EditableOutlineView | null>(null);
   const breadcrumb = useBreadcrumb(props.app);
@@ -77,7 +77,6 @@ export const MainEditor = (props: Props) => {
     };
     mainEditorView_.on("*", handleEditorEvent);
     setMainEditorView(mainEditorView_);
-    globalThis.clearAll = useImportExport(props.app).handleClearStorageConfirm;
   });
 
   return (
@@ -90,11 +89,12 @@ export const MainEditor = (props: Props) => {
         ></div>
       </div>
 
-      <CompletionPopup editor={mainEditorView()} completion={completion} />
+      <CompletionPopup editor={mainEditorView()!} completion={completion} />
       <ContextMenuGlobal />
       <ImportConfirmDialog app={props.app} />
       <ClearStorageConfirmDialog app={props.app} />
       <SettingsPanel />
+      <DeleteBlockConfirm editor={mainEditorView()!} />
     </>
   );
 };

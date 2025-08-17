@@ -20,6 +20,10 @@ const zh_CN = {
     warning: "请谨慎操作，建议在清空前先导出数据备份。",
     confirm: "确认清空",
   },
+  deleteBlockConfirmDialog: {
+    title: "确认删除",
+    description: "确定要删除这个块吗？",
+  },
   repoConfig: {
     titleCannotBeEmpty: "知识库标题不能为空",
     idCannotBeEmpty: "知识库 ID 不能为空",

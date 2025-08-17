@@ -26,7 +26,7 @@ import {
   redoCommand,
   selectCurrentListItem,
   splitListItemText,
-  toggleFocusedFoldState,
+  toggleFoldState,
   convertToSearchBlock,
   undoCommand,
   splitListItemSpecial,
@@ -57,8 +57,8 @@ export const NormalKeymap = Extension.create({
         return cmd(state, ...args);
       };
 
-    const toggleFoldTrue = toggleFocusedFoldState(editor, true, undefined);
-    const toggleFoldFalse = toggleFocusedFoldState(editor, false, undefined);
+    const toggleFoldTrue = toggleFoldState(editor, true, undefined);
+    const toggleFoldFalse = toggleFoldState(editor, false, undefined);
 
     return [
       keymap({
@@ -95,11 +95,11 @@ export const NormalKeymap = Extension.create({
             stopOnListItemBegin()
           ),
           tag: chainCommands(
-            deleteEmptyListItem(editor),
+            deleteEmptyListItem(editor, "backward", true),
             stopOnListItemBegin()
           ),
           search: chainCommands(
-            deleteEmptyListItem(editor),
+            deleteEmptyListItem(editor, "backward", true),
             stopOnListItemBegin()
           ),
         }),
@@ -116,9 +116,12 @@ export const NormalKeymap = Extension.create({
             deleteBeforeCharBeforeExpandedFile(),
             stopOnListItemEnd()
           ),
-          tag: chainCommands(deleteEmptyListItem(editor), stopOnListItemEnd()),
+          tag: chainCommands(
+            deleteEmptyListItem(editor, "forward", true),
+            stopOnListItemEnd()
+          ),
           search: chainCommands(
-            deleteEmptyListItem(editor),
+            deleteEmptyListItem(editor, "forward", true),
             stopOnListItemEnd()
           ),
         }),
@@ -132,10 +135,10 @@ export const NormalKeymap = Extension.create({
         "Mod-ArrowDown": chainCommands(toggleFoldFalse, stop),
         "Alt-ArrowUp": chainCommands(moveBlockUp(editor), stop),
         "Alt-ArrowDown": chainCommands(moveBlockDown(editor), stop),
-        "Mod-b": toggleMark(schema.marks.bold),
-        "Mod-i": toggleMark(schema.marks.italic),
-        "Mod-u": toggleMark(schema.marks.underline),
-        "Mod-`": toggleMark(schema.marks.code),
+        "Mod-b": toggleMark(schema.marks.bold!),
+        "Mod-i": toggleMark(schema.marks.italic!),
+        "Mod-u": toggleMark(schema.marks.underline!),
+        "Mod-`": toggleMark(schema.marks.code!),
         "Mod-Shift-l": copyBlockRef(editor),
         // 代码块中的行首/行尾导航
         Home: dispatchByBlockType({

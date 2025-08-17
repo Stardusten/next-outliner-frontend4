@@ -4,7 +4,12 @@ import type { Editor as TiptapEditor } from "@tiptap/core";
 import { Node, Schema } from "@tiptap/pm/model";
 import { NodeSelection, TextSelection, type Command } from "@tiptap/pm/state";
 import type { AttachmentTaskInfo } from "../../app/attachment/storage";
-import type { BlockDataInner, BlockId, BlockNode } from "../../common/types";
+import type {
+  BlockDataInner,
+  BlockId,
+  BlockNode,
+  SelectionInfo,
+} from "../../common/types";
 import { Codeblock } from "../../tiptap/nodes/codeblock";
 import {
   File,
@@ -23,6 +28,7 @@ import { useI18n } from "@/composables/useI18n";
 import { showToast } from "@/components/ui/toast";
 import { useBlockClipboard } from "@/composables/useBlockClipboard";
 import { useAttachment } from "@/composables/useAttachment";
+import { useDialogs } from "@/composables/useDialogs";
 
 /**
  * 判断一个 List Item Node 内容是不是空的
@@ -175,7 +181,9 @@ export function stopOnListItemBegin(): Command {
     if (!currListItem) return false;
 
     const { $from, empty } = state.selection;
-    if (empty && $from.parentOffset === 0) return true;
+    if (empty && $from.parentOffset === 0) {
+      return true;
+    }
 
     return false;
   };
@@ -188,8 +196,10 @@ export function stopOnListItemEnd(): Command {
     if (!currListItem) return false;
 
     const { $from, empty } = state.selection;
-    const pNode = currListItem.node.firstChild;
-    if (empty && $from.parentOffset === pNode.content.size) return true;
+    const pNode = currListItem.node.firstChild!;
+    if (empty && $from.parentOffset === pNode.content.size) {
+      return true;
+    }
 
     return false;
   };
@@ -264,7 +274,8 @@ export function splitListItemText(editor: TiptapEditor): Command {
 /** 删除空块 */
 export function deleteEmptyListItem(
   editor: TiptapEditor,
-  direction: "backward" | "forward" = "backward"
+  direction: "backward" | "forward" = "backward",
+  confirm?: boolean
 ): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
@@ -348,6 +359,12 @@ export function deleteEmptyListItem(
     if (!focusTarget) return false;
 
     if (!dispatch) return true;
+
+    if (confirm) {
+      const dialogs = useDialogs();
+      dialogs.openDeleteBlockConfirm(blockId, focusTarget);
+      return true;
+    }
 
     appview.app.withTx((tx) => {
       tx.deleteBlock(blockId);
@@ -456,7 +473,7 @@ export function updateSearchQuery(
   };
 }
 
-export function toggleFocusedFoldState(
+export function toggleFoldState(
   editor: TiptapEditor,
   targetState?: boolean,
   blockId?: BlockId
@@ -465,12 +482,12 @@ export function toggleFocusedFoldState(
     const { appView: appview } = editor;
     let targetBlockId = blockId;
 
-    const listItemInfo = findCurrListItem(state);
-    if (!listItemInfo) return false;
-
-    if (!targetBlockId)
+    if (!targetBlockId) {
+      const listItemInfo = findCurrListItem(state);
+      if (!listItemInfo) return false;
       targetBlockId = listItemInfo.node.attrs.blockId as BlockId;
-    if (!targetBlockId) return false;
+      if (!targetBlockId) return false;
+    }
 
     if (!dispatch) return true;
 
@@ -1321,7 +1338,8 @@ export function convertToSearchBlock(
 
 export function recursiveDeleteBlock(
   editor: TiptapEditor,
-  blockId: BlockId
+  blockId: BlockId,
+  selection?: SelectionInfo
 ): Command {
   return function () {
     const { appView: appview } = editor;
@@ -1329,9 +1347,10 @@ export function recursiveDeleteBlock(
       const descendants = tx.getDescendants(blockId);
       console.log(descendants);
       for (let i = descendants.length - 1; i >= 0; i--) {
-        tx.deleteBlock(descendants[i]);
+        tx.deleteBlock(descendants[i]!);
       }
       tx.setOrigin("localEditorStructural");
+      selection && tx.setSelection(selection);
     });
     return true;
   };
@@ -1547,13 +1566,13 @@ export function convertToTagBlock(
     const pnodeJson = JSON.parse(targetBlockData.content);
     const pnode = state.schema.nodeFromJSON(pnodeJson);
     if (!pnode) return false;
-    const tnode = state.schema.nodes.tag.create({}, pnode.content);
+    const tnode = state.schema.nodes.tag!.create({}, pnode.content);
 
     app.withTx((tx) => {
       tx.updateBlock(targetBlockId, {
         type: "tag",
         content: JSON.stringify(tnode.toJSON()),
-        folded: false,
+        folded: true,
       });
       tx.setOrigin("localEditorStructural");
       tx.setSelection({

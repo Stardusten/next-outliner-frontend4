@@ -36,6 +36,7 @@ export type CompletionStatus = {
   query: string;
   trigger: "[[" | "【【" | "#";
   isTag?: boolean;
+  fromCompositionEnd?: boolean;
 };
 
 export type EditableOutlineViewOptions = {

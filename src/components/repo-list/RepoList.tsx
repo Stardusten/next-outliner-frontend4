@@ -4,7 +4,7 @@ import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import { Eye, Trash2 } from "lucide-solid";
 import { createMemo } from "solid-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"; // Ensure this path is correct
-import DeleteConfirmDialog from "./DeleteConfirmDialog"; // Ensure this path is correct
+import DeleteConfirmDialog from "./DeleteRepoConfigConfirm"; // Ensure this path is correct
 import { useNavigate } from "@solidjs/router";
 
 const RepoList = () => {

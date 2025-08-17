@@ -3,7 +3,7 @@ import { useI18n } from "@/composables/useI18n";
 import {
   convertToSearchBlock,
   convertToTagBlock,
-  toggleFocusedFoldState,
+  toggleFoldState,
 } from "@/lib/app-views/editable-outline/commands";
 import { clipboard } from "@/lib/common/clipboard";
 import { toMarkdown } from "@/lib/common/markdown";
@@ -121,7 +121,7 @@ const ListItemView = (props: ListItemViewProps) => {
 
   const handleClickFoldBtn = (e: MouseEvent) => {
     const blockId = props.node.attrs.blockId;
-    const cmd = toggleFocusedFoldState(props.editor, undefined, blockId);
+    const cmd = toggleFoldState(props.editor, undefined, blockId);
     props.editor.appView.execCommand(cmd, true);
   };
 

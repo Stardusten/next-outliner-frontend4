@@ -111,7 +111,8 @@
   --color-bullet-background-collapsed: var(--muted);
   --color-bullet-dashed-border: #555;
   --color-link: var(--color-primary);
-  --color-block-ref: var(--color-link);
+  --color-block-ref: var(--color-foreground);
+  --color-block-ref-dash: var(--color-muted-foreground);
   --color-file-inline: var(--color-block-ref);
   --editor-codeblock-font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, "Liberation Mono", "Courier New", monospace;
@@ -128,6 +129,32 @@
   --color-syntax-tag: #d73a49;
   --color-syntax-attr: #6f42c1;
   --color-syntax-meta: #e36209;
+
+  /* 标签颜色 */
+  --tag-bg1: var(--color-fuchsia-50);
+  --tag-bg2: var(--color-orange-50);
+  --tag-bg3: var(--color-amber-50);
+  --tag-bg4: var(--color-yellow-50);
+  --tag-bg5: var(--color-lime-50);
+  --tag-bg6: var(--color-green-50);
+  --tag-bg7: var(--color-teal-50);
+  --tag-bg8: var(--color-blue-50);
+  --tag-bg9: var(--color-indigo-50);
+  --tag-bg10: var(--color-violet-50);
+  --tag-bg11: var(--color-pink-50);
+  --tag-bg12: var(--color-gray-50);
+  --tag-foreground1: var(--color-fuchsia-600);
+  --tag-foreground2: var(--color-orange-600);
+  --tag-foreground3: var(--color-amber-600);
+  --tag-foreground4: var(--color-yellow-600);
+  --tag-foreground5: var(--color-lime-600);
+  --tag-foreground6: var(--color-green-600);
+  --tag-foreground7: var(--color-teal-600);
+  --tag-foreground8: var(--color-blue-600);
+  --tag-foreground9: var(--color-indigo-600);
+  --tag-foreground10: var(--color-violet-600);
+  --tag-foreground11: var(--color-pink-600);
+  --tag-foreground12: var(--color-gray-600);
 }
 
 html.dark,
@@ -175,14 +202,7 @@ html[data-kb-theme="dark"] {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.488 0.243 264.376);
 
-  --editor-font-size: 16px;
   --color-guide-line: #30363d;
-  --color-bullet-background-collapsed: var(--muted);
-  --color-bullet-dashed-border: #555;
-  --color-link: var(--color-primary);
-  --color-block-ref: var(--color-link);
-  --color-file-inline: var(--color-block-ref);
-  --editor-codeblock-line-height: 1.4;
   --highlight-keep: rgb(0, 102, 153);
 
   /* 语法高亮 */
@@ -193,6 +213,33 @@ html[data-kb-theme="dark"] {
   --color-syntax-tag: #ff7b72;
   --color-syntax-attr: #d2a8ff;
   --color-syntax-meta: #ffa657;
+
+  /* 标签颜色 */
+  --tag-bg1: var(--color-fuchsia-600);
+  --tag-bg2: var(--color-orange-600);
+  --tag-bg3: var(--color-amber-600);
+  --tag-bg4: var(--color-yellow-600);
+  --tag-bg5: var(--color-lime-600);
+  --tag-bg6: var(--color-green-600);
+  --tag-bg7: var(--color-teal-600);
+  --tag-bg8: var(--color-blue-600);
+  --tag-bg9: var(--color-indigo-600);
+  --tag-bg10: var(--color-violet-600);
+  --tag-bg11: var(--color-pink-600);
+  --tag-bg12: var(--color-gray-600);
+
+  --tag-foreground1: var(--color-fuchsia-300);
+  --tag-foreground2: var(--color-orange-300);
+  --tag-foreground3: var(--color-amber-300);
+  --tag-foreground4: var(--color-yellow-300);
+  --tag-foreground5: var(--color-lime-300);
+  --tag-foreground6: var(--color-green-300);
+  --tag-foreground7: var(--color-teal-300);
+  --tag-foreground8: var(--color-blue-300);
+  --tag-foreground9: var(--color-indigo-300);
+  --tag-foreground10: var(--color-violet-300);
+  --tag-foreground11: var(--color-pink-300);
+  --tag-foreground12: var(--color-gray-300);
 }
 
 @layer base {

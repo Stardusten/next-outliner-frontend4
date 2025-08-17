@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useI18n } from "@/composables/useI18n";
 import {
-  toggleFocusedFoldState,
+  toggleFoldState,
   updateTagBlockAttrs,
 } from "@/lib/app-views/editable-outline/commands";
 import type { BlockId } from "@/lib/common/types";
@@ -72,7 +72,6 @@ const TagView = (props: ViewProps) => {
     fields: TagField[];
   } | null>(null);
   const [inheritsError, setInheritsError] = createSignal<string>("");
-  let colorInputRef: HTMLInputElement | undefined;
 
   const isDirty = createMemo(() => {
     const s = initialState();
@@ -89,23 +88,19 @@ const TagView = (props: ViewProps) => {
 
   const colorOptions = [
     { key: "none", bg: "bg-zinc-400", isNone: true },
-    { key: "magenta", bg: "bg-fuchsia-500" },
-    { key: "orange", bg: "bg-orange-500" },
-    { key: "amber", bg: "bg-amber-400" },
-    { key: "yellow", bg: "bg-yellow-400" },
-    { key: "lime", bg: "bg-lime-500" },
-    { key: "green", bg: "bg-emerald-500" },
-    { key: "teal", bg: "bg-teal-500" },
-    { key: "blue", bg: "bg-blue-600" },
-    { key: "indigo", bg: "bg-indigo-600" },
-    { key: "violet", bg: "bg-violet-600" },
-    { key: "pink", bg: "bg-pink-500" },
+    { key: "1", bg: "bg-[var(--tag-bg1)]" },
+    { key: "2", bg: "bg-[var(--tag-bg2)]" },
+    { key: "3", bg: "bg-[var(--tag-bg3)]" },
+    { key: "4", bg: "bg-[var(--tag-bg4)]" },
+    { key: "5", bg: "bg-[var(--tag-bg5)]" },
+    { key: "6", bg: "bg-[var(--tag-bg6)]" },
+    { key: "7", bg: "bg-[var(--tag-bg7)]" },
+    { key: "8", bg: "bg-[var(--tag-bg8)]" },
+    { key: "9", bg: "bg-[var(--tag-bg9)]" },
+    { key: "10", bg: "bg-[var(--tag-bg10)]" },
+    { key: "11", bg: "bg-[var(--tag-bg11)]" },
+    { key: "12", bg: "bg-[var(--tag-bg12)]" },
   ];
-
-  const presetKeys = new Set(colorOptions.map((c) => c.key));
-  const isCustomSelected = createMemo(
-    () => !!selectedColor() && !presetKeys.has(selectedColor())
-  );
 
   const syncFromNode = (node: ProseNode) => {
     const attrs = node.attrs as TagAttrs;
@@ -135,7 +130,7 @@ const TagView = (props: ViewProps) => {
     const id = blockId();
     if (!id) return;
     console.log("toggleFold", id);
-    const cmd = toggleFocusedFoldState(props.editor, undefined, id);
+    const cmd = toggleFoldState(props.editor, undefined, id);
     props.editor.appView.execCommand(cmd, true);
   };
 
@@ -151,10 +146,6 @@ const TagView = (props: ViewProps) => {
   };
 
   const handleSelectColor = (key: string) => setSelectedColor(key);
-  const handleColorChange = (e: InputEvent) => {
-    const val = (e.currentTarget as HTMLInputElement).value;
-    if (val) setSelectedColor(val);
-  };
 
   const handleSave = () => {
     const id = blockId();
@@ -194,8 +185,6 @@ const TagView = (props: ViewProps) => {
     });
   };
 
-  const handleOpenColorPicker = () => colorInputRef?.click();
-
   const handleDiscard = () => {
     const s = initialState();
     if (!s) return;
@@ -206,12 +195,12 @@ const TagView = (props: ViewProps) => {
 
   return (
     <div
-      class="tag"
+      class="tag flex flex-wrap items-center"
       data-inherits={(props.node.attrs as any).inherits?.join?.(",") ?? ""}
       data-color={(props.node.attrs as any).color ?? ""}
       data-fields={JSON.stringify((props.node.attrs as any).fields ?? [])}
     >
-      <div class="flex flex-wrap">
+      <div class="flex flex-grow">
         <div class="flex-0-0-auto pr-[4px] tag-content" />
 
         <div class="flex gap-1 items-center">
@@ -268,10 +257,6 @@ const TagView = (props: ViewProps) => {
               colorOptions={colorOptions}
               getSelectedColor={selectedColor}
               onSelectColor={handleSelectColor}
-              isCustomSelected={isCustomSelected}
-              onOpenColorPicker={handleOpenColorPicker}
-              colorInputRef={(el) => (colorInputRef = el)}
-              onColorInput={handleColorChange}
             />
             <InheritsSection
               t={t}
@@ -317,7 +302,7 @@ class TagViewAdapter implements NodeView {
   dispose: () => void;
 
   constructor(props: NodeViewRendererProps) {
-    const dom = document.createElement("div");
+    const container = document.createElement("div");
     this.dispose = render(
       () => (
         <TagView
@@ -326,10 +311,10 @@ class TagViewAdapter implements NodeView {
           getPos={props.getPos as any}
         />
       ),
-      dom
+      container
     );
-    this.dom = dom;
-    this.contentDOM = dom.querySelector(".tag-content")!;
+    this.dom = container.firstChild as HTMLDivElement;
+    this.contentDOM = container.querySelector(".tag-content")!;
   }
 
   destroy(): void {
