@@ -5,13 +5,10 @@ import { AppHeader } from "@/components/header/AppHeader";
 import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDialog";
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
 import SettingsPanel from "@/components/SettingsPanel";
+import { useAppKeybinding } from "@/composables/useAppKeybinding";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
-import { useBreadcrumb } from "@/composables/useBreadcrumb";
 import { useMainRoots } from "@/composables/useMainRoots";
-import {
-  EditableOutlineView,
-  EditableOutlineViewEvents,
-} from "@/lib/app-views/editable-outline/editable-outline";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 import { App } from "@/lib/app/app";
 import { BlockRefCompletion } from "@/lib/tiptap/functionalities/block-ref-completion";
 import { CompositionFix } from "@/lib/tiptap/functionalities/composition-fix";
@@ -37,6 +34,7 @@ export const MainEditor = (props: Props) => {
     createSignal<EditableOutlineView | null>(null);
   const completion = useBlockRefCompletion(props.app);
   const [mainRoots, setMainRoots] = useMainRoots();
+  const { handleKeydown } = useAppKeybinding(props.app);
 
   onMount(() => {
     if (!(editorContainer instanceof HTMLDivElement)) return;
@@ -82,7 +80,7 @@ export const MainEditor = (props: Props) => {
   return (
     <>
       <AppHeader app={props.app} />
-      <div class="flex-1 flex flex-col overflow-auto">
+      <div class="flex-1 flex flex-col overflow-auto" onKeyDown={handleKeydown}>
         <div
           class="flex-1 px-5 py-4 pb-[50vh] mt-5 outline-none"
           classList={{ "single-root": mainRoots().length === 1 }}

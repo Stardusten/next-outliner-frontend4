@@ -19,11 +19,14 @@ export const useBreadcrumb = (app: App) => {
   const currentRepo = useCurrRepoConfig();
 
   const items = createMemo(() => {
-    if (!currentRepo()) throw new Error("No current repo");
+    const currentRepoData = currentRepo();
+    if (!currentRepoData) throw new Error("No current repo");
 
-    const res: BreadcrumbItem[] = [{ title: currentRepo().title }];
+    const res: BreadcrumbItem[] = [{ title: currentRepoData.title }];
     if (mainRoots().length === 1) {
       const rootBlockId = mainRoots()[0];
+      if (!rootBlockId) return [];
+
       const rootBlock = app.getBlockNode(rootBlockId);
       if (rootBlock) {
         const path: BlockId[] = [];
