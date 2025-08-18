@@ -36,7 +36,7 @@ export const splitByCjk = (
   str: string,
   onCjkToken: (token: string) => void,
   onNonCjkToken: (token: string) => void,
-  opts: { caseSensitive?: boolean; removeDiacritics?: boolean } = {},
+  opts: { caseSensitive?: boolean; removeDiacritics?: boolean } = {}
 ) => {
   let prevCjk = false;
   const temp = [];
@@ -106,7 +106,7 @@ export const hybridTokenize = (str: string, options: TokenizeOptions = {}) => {
         tokens.push(...extractAllPrefixies(token).slice(0, -1));
       }
     },
-    { caseSensitive, removeDiacritics },
+    { caseSensitive, removeDiacritics }
   );
 
   return tokens;

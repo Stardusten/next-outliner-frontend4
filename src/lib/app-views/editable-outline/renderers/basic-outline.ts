@@ -72,7 +72,7 @@ function renderTextBlock(params: {
   const children = blockNode.children();
   const hasChildren = children != null && children.length > 0;
   const json = JSON.parse(blockData.content);
-  const listItemType = schema.nodes.listItem;
+  const listItemType = schema.nodes.listItem!;
   const paragraphNode = schema.nodeFromJSON(json);
   const listItemNode = listItemType.create(
     {
@@ -124,7 +124,7 @@ function renderCodeBlock(params: {
   const children = blockNode.children();
   const hasChildren = children != null && children.length > 0;
   const json = JSON.parse(blockData.content);
-  const listItemType = schema.nodes.listItem;
+  const listItemType = schema.nodes.listItem!;
   const paragraphNode = schema.nodeFromJSON(json);
   const listItemNode = listItemType.create(
     {
@@ -179,7 +179,7 @@ function renderSearchBlock(params: {
   if (hasChildren) throw new Error("search block should not have children");
 
   const json = JSON.parse(blockData.content);
-  const listItemType = schema.nodes.listItem;
+  const listItemType = schema.nodes.listItem!;
   const searchNode = schema.nodeFromJSON(json);
   const res =
     !blockData.folded && execQuery(editor.app, searchNode.attrs.query);
@@ -258,7 +258,7 @@ function renderTagBlock(params: {
   if (hasChildren) throw new Error("tag block should not have children");
 
   const json = JSON.parse(blockData.content);
-  const listItemType = schema.nodes.listItem;
+  const listItemType = schema.nodes.listItem!;
   const tagNode = schema.nodeFromJSON(json);
   const listItemNode = listItemType.create(
     {
@@ -280,10 +280,11 @@ export function renderOutline(editor: EditableOutlineView): Node {
 
   const listItemNodes: Node[] = [];
 
+  const editorRootBlockIds = editor.getRootBlockIds();
   const rootBlockIds =
-    editor.rootBlockIds.length === 0
+    editorRootBlockIds.length === 0
       ? editor.app.getRootBlockIds()
-      : editor.rootBlockIds;
+      : editorRootBlockIds;
 
   for (const rootBlockId of rootBlockIds) {
     const blockNode = editor.app.getBlockNode(rootBlockId);
@@ -300,7 +301,7 @@ export function renderOutline(editor: EditableOutlineView): Node {
   }
 
   // 创建文档节点
-  const { doc: docType } = schema.nodes;
+  const docType = schema.nodes.doc!;
   const multiRoot = listItemNodes.length > 1;
   return docType.create({ multiRoot }, listItemNodes);
 }

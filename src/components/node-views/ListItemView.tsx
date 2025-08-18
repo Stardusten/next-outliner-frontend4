@@ -9,7 +9,7 @@ import { clipboard } from "@/lib/common/clipboard";
 import { toMarkdown } from "@/lib/common/markdown";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
 import { Node } from "@tiptap/pm/model";
-import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";
+import { Decoration, NodeView, ViewMutationRecord } from "@tiptap/pm/view";
 import {
   Clipboard,
   Copy,
@@ -275,6 +275,7 @@ const ListItemView = (props: ListItemViewProps) => {
         "has-inref": nInRefs() > 0,
         "has-intag": nInTags() > 0,
         "show-path": showPath(),
+        highlighted: props.node.attrs.highlighted,
       }}
       style={{ "--level": level() }}
       data-block-id={props.node.attrs.blockId}

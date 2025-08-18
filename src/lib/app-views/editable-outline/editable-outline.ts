@@ -8,6 +8,8 @@ import {
   findCurrListItem,
   findListItemAtPos,
   getAbsPos,
+  highlightEphemeral,
+  scrollPmNodeIntoView,
 } from "@/lib/tiptap/utils";
 import { Editor as TiptapEditor } from "@tiptap/core";
 import { AnyExtension } from "@tiptap/core";
@@ -19,7 +21,7 @@ import { nanoid } from "nanoid";
 import type { AppView, AppViewId } from "../types";
 import { renderOutline } from "./renderers/basic-outline";
 import { incrementalUpdate } from "./renderers/patchers";
-import { Accessor, createSignal, Setter } from "solid-js";
+import { Accessor, createEffect, createSignal, Setter } from "solid-js";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 
 declare module "@tiptap/core" {
@@ -78,7 +80,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   id: AppViewId;
   app: App;
   tiptap: TiptapEditor | null;
-  rootBlockIds: BlockId[];
+  rootBlockIds: Signal<BlockId[]>;
   renderer: (editor: EditableOutlineView) => ProseMirrorNode;
   extensions: AnyExtension[];
   // 事件监听器
@@ -97,7 +99,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     this.id = options.id;
     this.app = app;
     this.tiptap = null;
-    this.rootBlockIds = options.rootBlockIds;
+    this.rootBlockIds = createSignal(options.rootBlockIds);
     this.renderer = options.renderer;
     this.extensions = options.extensions.map((extension) =>
       typeof extension === "function" ? extension(this) : extension
@@ -109,7 +111,15 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     this.off = this.eb.off;
     this.deferredContentSyncTask = null;
     this.repoConfig = useCurrRepoConfig(app);
-    this.focusedBlockId = createSignal(null);
+    this.focusedBlockId = createSignal<BlockId | null>(null);
+
+    // 监听 rootBlockIds 的变化，如果变化，则重绘编辑器
+    createEffect(() => {
+      const [getRootBlockIds] = this.rootBlockIds;
+      const rootBlockIds = getRootBlockIds();
+      this.eb.emit("root-blocks-changed", { rootBlockIds });
+      if (this.tiptap) this.#rerender(undefined, true);
+    });
   }
 
   mount(el: HTMLElement): void {
@@ -195,13 +205,13 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   }
 
   setRootBlockIds(rootBlockIds: BlockId[]): void {
-    this.rootBlockIds = rootBlockIds;
-    // 触发一次重绘来更新视图
-    if (this.tiptap) {
-      this.#rerender(undefined, true);
-    }
-    // 触发根块变更事件
-    this.eb.emit("root-blocks-changed", { rootBlockIds });
+    const [_, setRootBlockIds] = this.rootBlockIds;
+    setRootBlockIds(rootBlockIds);
+  }
+
+  getRootBlockIds(): BlockId[] {
+    const [getRootBlockIds] = this.rootBlockIds;
+    return getRootBlockIds();
   }
 
   canUndo(): boolean {
@@ -236,10 +246,9 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       }
 
       // 3. 确定根块：找到当前根块与目标块的公共父块
+      const rootBlockIds = this.getRootBlockIds();
       const currentRoots =
-        this.rootBlockIds.length > 0
-          ? this.rootBlockIds
-          : this.app.getRootBlockIds(); // todo
+        rootBlockIds.length > 0 ? rootBlockIds : this.app.getRootBlockIds(); // todo
 
       let newRootBlocks: BlockId[] = [];
 
@@ -260,7 +269,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
             i++
           ) {
             if (rootPath[i] === targetPath[i]) {
-              commonAncestor = rootPath[i];
+              commonAncestor = rootPath[i]!;
             } else {
               break;
             }
@@ -290,9 +299,13 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       const absPos = getAbsPos(doc, blockId, 0);
       if (absPos == null) return;
       const sel = TextSelection.create(doc, absPos);
-      const tr = this.tiptap.state.tr.setSelection(sel).scrollIntoView();
+      const tr = this.tiptap.state.tr.setSelection(sel);
       this.tiptap.view.focus();
       this.tiptap.view.dispatch(tr);
+      // 使用自定义的滚动函数，支持动画 + 滚动到中间
+      scrollPmNodeIntoView(this.tiptap.view, absPos);
+      // 高亮目标块
+      highlightEphemeral(this.tiptap.view, absPos);
     });
   }
 
@@ -414,7 +427,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     // 映射到新文档，然后添加到 positions 中
     const positions: number[] = [];
     for (let i = 0; i < tr.steps.length; i++) {
-      const step = tr.steps[i];
+      const step = tr.steps[i]!;
       const mapping = tr.mapping.slice(i);
 
       if ("from" in step) {
@@ -458,7 +471,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       // 如果事件是来自本地编辑器的内容变更，则不更新视图
       if (event.meta.origin === "localEditorContent" + this.id) return;
 
-      const incrementalUpdate = this.repoConfig().editor.incrementalUpdate;
+      const incrementalUpdate = this.repoConfig()?.editor.incrementalUpdate;
       if (incrementalUpdate) this.#patchStateAccAppTx(event);
       else {
         const selection =

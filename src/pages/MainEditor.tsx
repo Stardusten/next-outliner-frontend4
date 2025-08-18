@@ -17,6 +17,7 @@ import { BlockRefCompletion } from "@/lib/tiptap/functionalities/block-ref-compl
 import { CompositionFix } from "@/lib/tiptap/functionalities/composition-fix";
 import { FocusedBlockIdTracker } from "@/lib/tiptap/functionalities/focused-block-id-tracker";
 import { HighlightCodeblock } from "@/lib/tiptap/functionalities/highlight-codeblock";
+import { HighlightEphemeral } from "@/lib/tiptap/functionalities/highlight-ephermal";
 import { NormalKeymap } from "@/lib/tiptap/functionalities/keymap/normal";
 import { PasteHtmlOrPlainText } from "@/lib/tiptap/functionalities/paste-html";
 import PasteImage from "@/lib/tiptap/functionalities/paste-image";
@@ -34,13 +35,12 @@ export const MainEditor = (props: Props) => {
   let editorContainer!: HTMLDivElement;
   const [mainEditorView, setMainEditorView] =
     createSignal<EditableOutlineView | null>(null);
-  const breadcrumb = useBreadcrumb(props.app);
   const completion = useBlockRefCompletion(props.app);
+  const [mainRoots, setMainRoots] = useMainRoots();
 
   onMount(() => {
     if (!(editorContainer instanceof HTMLDivElement)) return;
 
-    const [mainRoots] = useMainRoots();
     const mainEditorView_ = new EditableOutlineView(props.app, {
       id: "main",
       extensions: [
@@ -55,6 +55,7 @@ export const MainEditor = (props: Props) => {
         PasteHtmlOrPlainText,
         PasteImage,
         FocusedBlockIdTracker,
+        HighlightEphemeral,
       ],
     });
     props.app.registerAppView(mainEditorView_);
@@ -68,14 +69,13 @@ export const MainEditor = (props: Props) => {
       tiptap?.view.focus();
     });
 
-    const handleEditorEvent = (
-      key: keyof EditableOutlineViewEvents,
-      event: EditableOutlineViewEvents[keyof EditableOutlineViewEvents]
-    ) => {
+    mainEditorView_.on("root-blocks-changed", (event) => {
+      setMainRoots(event.rootBlockIds);
+    });
+    mainEditorView_.on("*", (key, event) => {
       completion.handleCompletionRelatedEvent(mainEditorView_, key, event);
-      breadcrumb.handleMainEditorEvent(key, event);
-    };
-    mainEditorView_.on("*", handleEditorEvent);
+    });
+
     setMainEditorView(mainEditorView_);
   });
 
@@ -85,6 +85,7 @@ export const MainEditor = (props: Props) => {
       <div class="flex-1 flex flex-col overflow-auto">
         <div
           class="flex-1 px-5 py-4 pb-[50vh] mt-5 outline-none"
+          classList={{ "single-root": mainRoots().length === 1 }}
           ref={editorContainer}
         ></div>
       </div>

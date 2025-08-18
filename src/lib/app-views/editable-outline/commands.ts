@@ -96,7 +96,7 @@ export function demoteSelected(editor: TiptapEditor): Command {
       const index = tx.getIndex(blockId)!;
       if (index === 0)
         throw new Error(`target 块 ${blockId} 是第一个块，不能缩进`);
-      const prevNodeId = tx.getChildrenIds(parentId)[index - 1];
+      const prevNodeId = tx.getChildrenIds(parentId)[index - 1]!;
       const newIndex = tx.getChildrenIds(prevNodeId)!.length;
       tx.moveBlock(blockId, prevNodeId, newIndex);
 
@@ -132,7 +132,7 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
     if (splitPos === 0) {
       appview.app.withTx((tx) => {
         // 在开头分割：当前块上方创建空的新块，保持当前块内容不变
-        const newContent = contentNodeToStr(schema.nodes.paragraph.create());
+        const newContent = contentNodeToStr(schema.nodes.paragraph!.create());
         const newBlockId = tx.createBlockBefore(currBlockId, {
           type: "text",
           folded: false,
@@ -149,7 +149,7 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
     } else if (splitPos === pNode.content.size) {
       appview.app.withTx((tx) => {
         // 在末尾分割：当前块下方创建空的新块，保持当前块内容不变
-        const newContent = contentNodeToStr(schema.nodes.paragraph.create());
+        const newContent = contentNodeToStr(schema.nodes.paragraph!.create());
         const newBlockId = tx.createBlockAfter(currBlockId, {
           type: "text",
           folded: false,
@@ -205,6 +205,61 @@ export function stopOnListItemEnd(): Command {
   };
 }
 
+/**
+ * 在一个块末尾按 Enter 时，在这个块下面创建一个子块，index 为 0
+ * @param enlargeOnly 如果为 true，只在根块被放大时应用这个策略
+ */
+export function addFirstChild(
+  editor: TiptapEditor,
+  enlargeOnly?: boolean
+): Command {
+  return function (state, dispatch) {
+    const { appView: appview, schema } = editor;
+
+    const { $from } = state.selection;
+    const currListItem = findCurrListItem(state);
+    if (!currListItem) return false;
+
+    const { node: listItem } = currListItem;
+    if (listItem.attrs.type !== "text") return false; // 这个方法仅用于文本块
+
+    const currBlockId = listItem.attrs.blockId as BlockId;
+    if (!currBlockId) return false;
+
+    const pNode = listItem.firstChild;
+    if (!pNode) return false;
+
+    if (enlargeOnly) {
+      const rootBlockIds = appview.getRootBlockIds();
+      if (rootBlockIds.length !== 1 || rootBlockIds[0] !== currBlockId)
+        return false;
+    }
+
+    if ($from.parentOffset === pNode.content.size) {
+      if (!dispatch) return true;
+
+      appview.app.withTx((tx) => {
+        const newContent = contentNodeToStr(schema.nodes.paragraph!.create());
+        const newBlockId = tx.createBlockUnder(currBlockId, 0, {
+          type: "text",
+          folded: false,
+          content: newContent,
+        });
+        tx.setSelection({
+          viewId: appview.id,
+          blockId: newBlockId,
+          anchor: 0,
+        });
+        tx.setOrigin("localEditorStructural");
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+}
+
 export function splitListItemText(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview, schema } = editor;
@@ -230,7 +285,7 @@ export function splitListItemText(editor: TiptapEditor): Command {
     if (splitPos === 0) {
       appview.app.withTx((tx) => {
         // 在开头分割：当前块上方创建空的新块，保持当前块内容不变
-        const newContent = contentNodeToStr(schema.nodes.paragraph.create());
+        const newContent = contentNodeToStr(schema.nodes.paragraph!.create());
         const newBlockId = tx.createBlockBefore(currBlockId, {
           type: "text",
           folded: false,
@@ -620,7 +675,7 @@ export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
       return false; // 如果是第一个块，无法合并
 
     // 找到前一个兄弟块（同级别）
-    const prevBlockNode = siblings[currentIndex - 1];
+    const prevBlockNode = siblings[currentIndex - 1]!;
     const prevBlockId = prevBlockNode.id;
     const prevBlockData = appview.app.getBlockData(prevBlockId);
     if (!prevBlockData) return false;
@@ -643,12 +698,12 @@ export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
       if (prevBlockData.content && prevBlockData.content.trim() !== "") {
         prevParagraphNode = str2ContentNode(schema, prevBlockData.content);
       } else {
-        prevParagraphNode = schema.nodes.paragraph.create();
+        prevParagraphNode = schema.nodes.paragraph!.create();
       }
     } catch (error) {
       // 如果解析失败，创建包含纯文本的段落
       const prevTextContent = appview.app.getTextContent(prevBlockId);
-      prevParagraphNode = schema.nodes.paragraph.create(
+      prevParagraphNode = schema.nodes.paragraph!.create(
         null,
         prevTextContent ? [schema.text(prevTextContent)] : []
       );
@@ -682,7 +737,7 @@ export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
         const mergedContent = prevParagraphNode.content.append(
           currentParagraphNode.content
         );
-        mergedParagraphNode = schema.nodes.paragraph.create(
+        mergedParagraphNode = schema.nodes.paragraph!.create(
           null,
           mergedContent
         );
@@ -1035,7 +1090,7 @@ export function redoCommand(editor: TiptapEditor): Command {
 export function insertLineBreak(): Command {
   return function (state, dispatch) {
     if (dispatch) {
-      const lineBreak = state.schema.nodes.lineBreak.create();
+      const lineBreak = state.schema.nodes.lineBreak!.create();
       const tr = state.tr.replaceSelectionWith(lineBreak);
       dispatch(tr);
     }
@@ -1072,7 +1127,7 @@ export function setImageWidth(pos: number, width: number): Command {
 export function deleteFile(pos: number): Command {
   return function (state, dispatch) {
     const node = state.doc.nodeAt(pos);
-    const fileType = state.schema.nodes.file;
+    const fileType = state.schema.nodes.file!;
     if (node && node.type.name === fileType.name) {
       const tr = state.tr.delete(pos, pos + node.nodeSize);
       dispatch && dispatch(tr);
@@ -1105,7 +1160,7 @@ export async function uploadFile(
 
   // 当任务创建时插入文件节点
   let taskId: string | null = null;
-  const fileType = editor.schema.nodes.file;
+  const fileType = editor.schema.nodes.file!;
 
   const onTaskCreated = (task: AttachmentTaskInfo) => {
     // 开始执行就立刻移除监听器，确保只执行一次
@@ -1424,7 +1479,7 @@ export function moveBlocksTo(
 
     editor.appView.app.withTx((tx) => {
       for (let i = blockIds.length - 1; i >= 0; i--) {
-        tx.moveBlock(blockIds[i], parent, index);
+        tx.moveBlock(blockIds[i]!, parent, index);
       }
       tx.setOrigin("localEditorStructural");
     });
@@ -1494,7 +1549,7 @@ export function updateCodeblockLang(
 
     const json = JSON.parse(tgtBlockData.content);
     const oldNode = editor.schema.nodeFromJSON(json);
-    const newNode = editor.schema.nodes.codeblock.create(
+    const newNode = editor.schema.nodes.codeblock!.create(
       {
         ...oldNode.attrs,
         lang,
@@ -1609,7 +1664,7 @@ export function updateTagBlockAttrs(
 
     const json = JSON.parse(tgtBlockData.content);
     const oldNode = editor.schema.nodeFromJSON(json);
-    const newNode = editor.schema.nodes.tag.create(
+    const newNode = editor.schema.nodes.tag!.create(
       {
         ...oldNode.attrs,
         ...patch,
@@ -1647,7 +1702,7 @@ export function updateSarchBlockAttrs(
 
     const json = JSON.parse(tgtBlockData.content);
     const oldNode = editor.schema.nodeFromJSON(json);
-    const newNode = editor.schema.nodes.search.create(
+    const newNode = editor.schema.nodes.search!.create(
       {
         ...oldNode.attrs,
         ...patch,

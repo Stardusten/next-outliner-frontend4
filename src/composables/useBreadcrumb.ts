@@ -57,20 +57,8 @@ export const useBreadcrumb = (app: App) => {
     else mainEditor.setRootBlockIds([]); // TODO ??
   };
 
-  const handleMainEditorEvent = (
-    key: keyof EditableOutlineViewEvents,
-    event: EditableOutlineViewEvents[keyof EditableOutlineViewEvents]
-  ) => {
-    if (key === "root-blocks-changed") {
-      const typedEvent =
-        event as EditableOutlineViewEvents["root-blocks-changed"];
-      setMainRoots(typedEvent.rootBlockIds);
-    }
-  };
-
   return {
     items,
     handleBreadcrumbClick,
-    handleMainEditorEvent,
   };
 };

@@ -37,6 +37,11 @@ const BlockRefView = (props: BlockRefViewProps) => {
     }
   });
 
+  const handleClick = (e: MouseEvent) => {
+    e.preventDefault();
+    props.editor.appView.locateBlock(props.blockId);
+  };
+
   const handleRightClick = (e: MouseEvent) => {
     e.preventDefault();
     const { open } = useContextMenu();
@@ -72,6 +77,7 @@ const BlockRefView = (props: BlockRefViewProps) => {
         "outline-[1px] outline-offset-[1px]": props.selected,
         [`tag-color-${tagColor()}`]: isTag() && !!tagColor(),
       }}
+      onClick={handleClick}
       oncontextmenu={handleRightClick}
     >
       {isTag() ? "#" + textContent() : textContent()}

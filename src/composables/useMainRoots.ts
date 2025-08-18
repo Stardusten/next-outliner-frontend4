@@ -6,7 +6,7 @@ let mainRoots: Signal<BlockId[]> | null = null;
 
 export const useMainRoots = () => {
   if (!mainRoots) {
-    mainRoots = useLocalStorage("mainRoots", []);
+    mainRoots = useLocalStorage<BlockId[]>("mainRoots", []);
   }
   return mainRoots;
 };

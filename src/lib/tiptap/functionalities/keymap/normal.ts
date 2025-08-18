@@ -32,6 +32,7 @@ import {
   splitListItemSpecial,
   stopOnListItemBegin,
   stopOnListItemEnd,
+  addFirstChild,
 } from "../../../app-views/editable-outline/commands";
 import { findCurrListItem } from "../../utils";
 
@@ -75,10 +76,22 @@ export const NormalKeymap = Extension.create({
           search: chainCommands(promoteSelected(editor), stop),
         }),
         Enter: dispatchByBlockType({
-          text: chainCommands(splitListItemText(editor), stop),
+          text: chainCommands(
+            addFirstChild(editor, true),
+            splitListItemText(editor),
+            stop
+          ),
           code: codeblockInsertLineBreak(),
-          tag: chainCommands(splitListItemSpecial(editor), stop),
-          search: chainCommands(splitListItemSpecial(editor), stop),
+          tag: chainCommands(
+            addFirstChild(editor, true),
+            splitListItemSpecial(editor),
+            stop
+          ),
+          search: chainCommands(
+            addFirstChild(editor, true),
+            splitListItemSpecial(editor),
+            stop
+          ),
         }),
         Backspace: dispatchByBlockType({
           text: chainCommands(

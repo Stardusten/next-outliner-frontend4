@@ -66,6 +66,9 @@ div.list-item-x > div.list-item-left {
   left: -32px;
   user-select: none;
   padding: 5px 0;
+  /* 一个弥补 list-item-x 和 list-item-left 之间间隙的 workaround */
+  padding-right: 4px !important;
+  margin-right: -4px !important;
 }
 
 /** bullet 和折叠按钮图标 */
@@ -611,4 +614,306 @@ span.block-ref.tag.tag-color-11 {
 span.block-ref.tag.tag-color-12 {
   background-color: color-mix(in oklab, var(--tag-bg12) 20%, transparent);
   color: var(--tag-foreground12);
+}
+
+div.list-item-x.highlighted * {
+  background-color: var(--highlight-keep);
+}
+
+/* 
+  如果只有一个根节点，会加上 .single-root 类
+  此时会将根块放大（看上去像标题），并且所有子级块的层级减一
+ */
+
+/* 列表项 */
+.single-root div.list-item-x {
+  margin-left: calc(var(--level) * 32px + 36px - 32px);
+}
+
+/* 根块放大 */
+.single-root div.list-item-x:first-of-type {
+  margin-left: calc(36px - 20px);
+  padding-bottom: 1.5em;
+  font-size: 1.5em;
+}
+
+/* 根块隐藏折叠按钮和 bullet */
+.single-root div.list-item-x:first-of-type .list-item-left {
+  visibility: hidden;
+}
+
+/** 纯 CSS 实现的引导线 */
+.single-root div.list-item-x.level-0 {
+  /** 这一部分 shadow 用于遮掉选区，下同 */
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-1 {
+  box-shadow: calc(-11px - 2 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-2 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-3 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-4 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-5 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-6 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-7 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root div.list-item-x.level-8 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-9 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-10 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-11 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 10 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 11 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-12 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 10 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 11 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 11 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 12 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-13 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 10 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 11 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 11 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 12 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 12 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 13 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-14 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 10 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 11 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 11 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 12 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 12 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 13 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 13 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 14 * 32px) 0px 0px var(--color-background);
+}
+
+.single-root .list-item-x.level-15 {
+  box-shadow: calc(-11px - 1 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 1 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 2 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 2 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 3 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 3 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 4 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 4 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 5 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 5 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 6 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 6 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 7 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 7 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 8 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 8 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 9 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 9 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 10 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 10 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 11 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 11 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 12 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 12 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 13 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 13 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 14 * 32px) 0px 0px var(--color-background),
+    calc(-12px - 14 * 32px) 0px 0px var(--color-guide-line),
+    calc(-11px - 15 * 32px) 0px 0px var(--color-background);
 }

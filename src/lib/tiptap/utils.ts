@@ -2,6 +2,8 @@ import { Node as ProseMirrorNode, Schema } from "@tiptap/pm/model";
 import type { BlockId, BlockType } from "../common/types";
 import { detachedSchema } from "./schema";
 import type { EditorState } from "@tiptap/pm/state";
+import { Decoration, EditorView } from "@tiptap/pm/view";
+import { addHighlightEphemeral } from "./functionalities/highlight-ephermal";
 
 /**
  * @param contentNode Paragraph、Codeblock 是内容节点
@@ -22,7 +24,7 @@ export function str2ContentNode(schema: Schema, str: string): ProseMirrorNode {
       "error=",
       error
     );
-    return schema.nodes.paragraph.create();
+    return schema.nodes.paragraph!.create();
   }
 }
 
@@ -30,22 +32,22 @@ export function contentNodeToStrAndType(node: ProseMirrorNode): {
   type: BlockType;
   content: string;
 } {
-  const paragraph = detachedSchema.nodes.paragraph;
-  const codeblock = detachedSchema.nodes.codeblock;
-  const search = detachedSchema.nodes.search;
-  const tag = detachedSchema.nodes.tag;
+  const paragraph = detachedSchema.nodes.paragraph!;
+  const codeblock = detachedSchema.nodes.codeblock!;
+  const search = detachedSchema.nodes.search!;
+  const tag = detachedSchema.nodes.tag!;
 
   // xxx
   const type =
     node.type.name === paragraph.name
       ? "text"
       : node.type.name === codeblock.name
-        ? "code"
-        : node.type.name === search.name
-          ? "search"
-          : node.type.name === tag.name
-            ? "tag"
-            : "text";
+      ? "code"
+      : node.type.name === search.name
+      ? "search"
+      : node.type.name === tag.name
+      ? "tag"
+      : "text";
   const content = contentNodeToStr(node);
   return { type, content };
 }
@@ -71,7 +73,7 @@ export function getAbsPos(
   offset: number
 ): number | null {
   let absolutePos: number | null = null;
-  const listItem = detachedSchema.nodes.listItem;
+  const listItem = detachedSchema.nodes.listItem!;
 
   doc.descendants((node, pos) => {
     if (absolutePos !== null) return false; // 已找到，停止搜索
@@ -92,7 +94,7 @@ export function getAbsPos(
 
 export function findCurrListItem(state: EditorState) {
   const { $from } = state.selection;
-  const listItem = detachedSchema.nodes.listItem;
+  const listItem = detachedSchema.nodes.listItem!;
 
   for (let i = $from.depth; i > 0; i--) {
     const node = $from.node(i);
@@ -110,7 +112,7 @@ export function findCurrListItem(state: EditorState) {
  */
 export function findListItemAtPos(doc: ProseMirrorNode, pos: number) {
   const $pos = doc.resolve(pos);
-  const listItem = detachedSchema.nodes.listItem;
+  const listItem = detachedSchema.nodes.listItem!;
 
   for (let i = $pos.depth; i > 0; i--) {
     const node = $pos.node(i);
@@ -130,4 +132,30 @@ export function getSelectedListItemInfo(state: EditorState) {
     end: endItemInfo,
     cross: startItemInfo?.pos !== endItemInfo?.pos,
   };
+}
+
+export function scrollPmNodeIntoView(
+  editor: EditorView,
+  pos: number,
+  args?: ScrollIntoViewOptions
+) {
+  const dom = editor.domAtPos(pos);
+  if (dom.node instanceof HTMLElement) {
+    dom.node.scrollIntoView({
+      block: "center",
+      behavior: "smooth",
+      inline: "nearest",
+      ...args,
+    });
+  }
+}
+
+export function highlightEphemeral(
+  view: EditorView,
+  pos: number,
+  timeout: number = 3000
+) {
+  const listItem = findListItemAtPos(view.state.doc, pos);
+  if (!listItem) return;
+  addHighlightEphemeral(view, listItem.pos, timeout);
 }
