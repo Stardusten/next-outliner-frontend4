@@ -81,6 +81,7 @@ function renderTextBlock(params: {
       folded: blockData.folded,
       hasChildren,
       type: "text",
+      number: blockData.number,
       ...overrideAttrs,
     },
     paragraphNode
@@ -133,6 +134,7 @@ function renderCodeBlock(params: {
       folded: blockData.folded,
       hasChildren,
       type: "code",
+      number: blockData.number,
       ...overrideAttrs,
     },
     paragraphNode
@@ -199,6 +201,7 @@ function renderSearchBlock(params: {
       folded: blockData.folded,
       hasChildren,
       type: "search",
+      number: blockData.number,
       ...overrideAttrs,
     },
     searchNodeWithStatus
@@ -267,6 +270,7 @@ function renderTagBlock(params: {
       folded: blockData.folded,
       hasChildren,
       type: "tag",
+      number: blockData.number,
       ...overrideAttrs,
     },
     tagNode

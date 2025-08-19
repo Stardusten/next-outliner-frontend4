@@ -3,6 +3,7 @@ import { useI18n } from "@/composables/useI18n";
 import {
   convertToSearchBlock,
   convertToTagBlock,
+  numberingChildren,
   toggleFoldState,
 } from "@/lib/app-views/editable-outline/commands";
 import { clipboard } from "@/lib/common/clipboard";
@@ -15,6 +16,7 @@ import {
   Copy,
   CornerDownRight,
   Link,
+  ListOrdered,
   Repeat,
   Scissors,
   SVGAttributes,
@@ -88,7 +90,15 @@ const ListItemView = (props: ListItemViewProps) => {
   const showPath = () => props.node.attrs.showPath === true;
   const showRefCounter = () => props.node.attrs.type === "text";
   const level = () => props.node.attrs.level;
+  const number = () => props.node.attrs.number;
   const { t } = useI18n();
+
+  const nopr = createMemo(() => {
+    const numberVal = number() as string;
+    if (numberVal == null) return false;
+    const lastChar = numberVal.at(-1);
+    return lastChar == "、" || lastChar == "）";
+  });
 
   const nInRefs = createMemo(() => {
     if (!showRefCounter()) return 0;
@@ -198,6 +208,15 @@ const ListItemView = (props: ListItemViewProps) => {
         ],
       },
       {
+        type: "item",
+        icon: ListOrdered,
+        label: t("blockContextMenu.numberingChildren"),
+        action: () => {
+          const cmd = numberingChildren(editor, "1.", blockId);
+          editor.appView.execCommand(cmd, true);
+        },
+      },
+      {
         type: "submenu",
         icon: Repeat,
         label: t("blockContextMenu.convertTo"),
@@ -258,6 +277,7 @@ const ListItemView = (props: ListItemViewProps) => {
       onclick: handleClickBullet,
       oncontextmenu: handleRightClickBullet,
     } as const;
+    if (number() != null) return <span {...props}>{number()}</span>;
     if (type() === "tag") return <HashTag {...props} />;
     if (type() === "search") return <Search {...props} />;
     return <Dot {...props} />;
@@ -276,9 +296,12 @@ const ListItemView = (props: ListItemViewProps) => {
         "has-intag": nInTags() > 0,
         "show-path": showPath(),
         highlighted: props.node.attrs.highlighted,
+        "has-number": number() != null,
+        nopr: nopr(),
       }}
       style={{ "--level": level() }}
       data-block-id={props.node.attrs.blockId}
+      {...(number() != null ? { "data-number": number() } : {})}
     >
       <div class="list-item-left" contentEditable={false}>
         {/* 折叠按钮 */}

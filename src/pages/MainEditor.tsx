@@ -20,6 +20,7 @@ import { PasteHtmlOrPlainText } from "@/lib/tiptap/functionalities/paste-html";
 import PasteImage from "@/lib/tiptap/functionalities/paste-image";
 import { SafariImeSpan } from "@/lib/tiptap/functionalities/safari-ime-span";
 import { ToCodeblock } from "@/lib/tiptap/functionalities/to-codeblock";
+import { ToNumbered } from "@/lib/tiptap/functionalities/to-numbered";
 import { markExtensions } from "@/lib/tiptap/marks";
 import { nodeExtensions } from "@/lib/tiptap/nodes";
 import { createSignal, onMount } from "solid-js";
@@ -50,6 +51,7 @@ export const MainEditor = (props: Props) => {
         CompositionFix,
         HighlightCodeblock,
         ToCodeblock,
+        ToNumbered,
         PasteHtmlOrPlainText,
         PasteImage,
         FocusedBlockIdTracker,

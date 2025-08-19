@@ -61,7 +61,7 @@ function findBlockPosition(
   blockId: string
 ): BlockPosition | null {
   for (let i = 0, p = 0; i < content.length; i++) {
-    const listItem = content[i];
+    const listItem = content[i]!;
     if (listItem.attrs.blockId === blockId) {
       return { pos: p, index: i };
     }
@@ -82,7 +82,7 @@ function findParentInfo(
   }
 
   for (let i = 0, p = 0; i < content.length; i++) {
-    const listItem = content[i];
+    const listItem = content[i]!;
     const { blockId, level } = listItem.attrs;
     if (blockId === parentId) {
       return {
@@ -117,7 +117,7 @@ function calculateInsertPosition(
   let p = startPos;
 
   while (i < content.length) {
-    const listItem = content[i];
+    const listItem = content[i]!;
     const { level } = listItem.attrs;
 
     if (level === targetLevel) {
@@ -161,12 +161,12 @@ function calculateBlockEndPosition(
 
   // 计算到这个块的位置
   for (let i = 0; i <= blockIndex; i++) {
-    endPos += content[i].nodeSize;
+    endPos += content[i]!.nodeSize;
   }
 
   // 跳过所有子级
   for (let i = blockIndex + 1; i < content.length; i++) {
-    const childItem = content[i];
+    const childItem = content[i]!;
     if (childItem.attrs.level <= blockLevel) break;
     endPos += childItem.nodeSize;
   }
@@ -181,19 +181,19 @@ function calculateSubtreeRange(
   content: readonly Node[],
   blockIndex: number
 ): { start: number; end: number } {
-  const listItem = content[blockIndex];
+  const listItem = content[blockIndex]!;
   const level = listItem.attrs.level;
 
   // 计算起始位置
   let start = 0;
   for (let i = 0; i < blockIndex; i++) {
-    start += content[i].nodeSize;
+    start += content[i]!.nodeSize;
   }
 
   // 计算结束位置
   let end = start + listItem.nodeSize;
   for (let i = blockIndex + 1; i < content.length; i++) {
-    const childItem = content[i];
+    const childItem = content[i]!;
     if (childItem.attrs.level <= level) break;
     end += childItem.nodeSize;
   }
@@ -291,7 +291,7 @@ function handleBlockCreateOp(
     rootOnly: true,
   });
 
-  tr = tr.insert(insertPos, node);
+  tr = tr.insert(insertPos, node!);
 
   // 更新受影响的父块
   const affectedParents = collectAffectedParents({
@@ -315,7 +315,7 @@ function handleBlockUpdateOp(
     throw new Error("Block not found for update: " + op.blockId);
   }
 
-  const listItem = content[blockPos.index];
+  const listItem = content[blockPos.index]!;
   const level = listItem.attrs.level;
   const range = calculateSubtreeRange(content, blockPos.index);
 
@@ -351,7 +351,7 @@ function handleBlockDeleteOp(
   const deletedBlock = content[blockPos.index];
   const deletedBlockParent = getBlockParentId(content, blockPos.index);
 
-  const listItem = content[blockPos.index];
+  const listItem = content[blockPos.index]!;
   tr = tr.delete(blockPos.pos, blockPos.pos + listItem.nodeSize);
 
   // 更新受影响的父块
@@ -430,13 +430,13 @@ function getBlockParentId(
   blockIndex: number
 ): string | null {
   const targetBlock = content[blockIndex];
-  const targetLevel = targetBlock.attrs.level;
+  const targetLevel = targetBlock!.attrs.level;
 
   if (targetLevel === 0) return null; // 根级块没有父块
 
   // 向前查找父级
   for (let i = blockIndex - 1; i >= 0; i--) {
-    const block = content[i];
+    const block = content[i]!;
     if (block.attrs.level === targetLevel - 1) {
       return block.attrs.blockId;
     }

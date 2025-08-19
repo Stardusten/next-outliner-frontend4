@@ -6,6 +6,7 @@ import { findCurrListItem } from "../utils";
 export const ToCodeblock = Extension.create({
   addProseMirrorPlugins() {
     const schema = this.editor.schema;
+    const codeblock = schema.nodes.codeblock!;
 
     return [
       inputRules({
@@ -22,7 +23,7 @@ export const ToCodeblock = Extension.create({
             // 将 currentListItem 的内容换成空 codeblock
             let tr = state.tr;
             const lang = match[1];
-            const codeblock = schema.nodes.codeblock.create({ lang });
+            const codeblockNode = codeblock.create({ lang });
 
             // 更新列表项的类型为 code
             tr = tr.setNodeMarkup(currListItem.pos, null, {
@@ -34,7 +35,7 @@ export const ToCodeblock = Extension.create({
             tr = tr.replaceWith(
               currListItem.pos + 1,
               currListItem.pos + currListItem.node.nodeSize - 1,
-              codeblock
+              codeblockNode
             );
 
             // 将光标移动到代码块的第一个字符

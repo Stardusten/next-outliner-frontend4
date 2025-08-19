@@ -8,6 +8,7 @@ import type {
   BlockDataInner,
   BlockId,
   BlockNode,
+  NumberFormat,
   SelectionInfo,
 } from "../../common/types";
 import { Codeblock } from "../../tiptap/nodes/codeblock";
@@ -1715,5 +1716,34 @@ export function updateSarchBlockAttrs(
       tx.setOrigin("localEditorStructural");
     });
     return true;
+  };
+}
+
+export function numberingChildren(
+  editor: TiptapEditor,
+  format: NumberFormat,
+  blockId?: BlockId
+): Command {
+  return function (state, dispatch) {
+    // let tgtId = blockId;
+    // if (!tgtId) {
+    //   const listItemInfo = findCurrListItem(state);
+    //   if (!listItemInfo) return false;
+
+    //   tgtId = listItemInfo.node.attrs.blockId as BlockId;
+    //   if (!tgtId) return false;
+    // }
+
+    // const tgtBlockData = editor.appView.app.getBlockData(tgtId);
+    // if (tgtBlockData == null || tgtBlockData.type !== "text") return false;
+
+    // if (!dispatch) return true;
+
+    // editor.appView.app.withTx((tx) => {
+    //   tx.updateBlock(tgtId, { nc: format });
+    //   tx.setOrigin("localEditorStructural");
+    // });
+    // return true;
+    throw new Error("未实现：numberingChildren");
   };
 }

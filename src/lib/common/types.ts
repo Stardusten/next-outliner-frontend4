@@ -8,10 +8,30 @@ export type BlocksVersion = VersionVector;
 
 export type BlockType = "text" | "code" | "search" | "tag";
 
+export const numberFormats = [
+  "1.",
+  "1)",
+  "(1)",
+  "a.",
+  "a)",
+  "(a)",
+  "I.",
+  "I)",
+  "(I)",
+  "i.",
+  "i)",
+  "(i)",
+  "一、",
+  "(一)",
+] as const;
+
+export type NumberFormat = (typeof numberFormats)[number];
+
 export type BlockDataInner = {
   folded: boolean;
   type: BlockType;
   content: string;
+  number?: string;
 };
 
 export type BlockData = LoroMap<BlockDataInner>;

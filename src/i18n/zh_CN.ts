@@ -119,6 +119,7 @@ const zh_CN = {
     copyAsPureText: "纯文本",
     copyAsHtml: "HTML",
     copiedMarkdownToClipboard: "Markdown 已复制到剪贴板",
+    numberingChildren: "给子块编号",
     pasteAs: "粘贴为...",
     pasteAsMarkdownSingleBlock: "Markdown（单个块）",
     pasteAsMarkdownAutoSplit: "Markdown（自动拆分块）",

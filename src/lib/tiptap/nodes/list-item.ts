@@ -6,6 +6,10 @@ export const ListItem = Node.create({
   group: "block",
   content: "paragraph | codeblock | search",
   addAttributes() {
+    // 说明：这些属性都是 render only 的，不会被持久化
+    // 因为看持久化的代码就知道不管是文本块、代码块还是搜索块
+    // content 里存的都是 paragraph、codeblock、search、tag node
+    // 节点的内容，list item 的属性是不持久化的
     return {
       // 列表项的层级
       level: { default: 0 },
@@ -21,6 +25,8 @@ export const ListItem = Node.create({
       showPath: { default: false },
       // 是否是搜索结果的根节点
       isSearchResultRoot: { default: false },
+      // 块编号
+      number: { default: null },
     };
   },
   parseHTML() {
