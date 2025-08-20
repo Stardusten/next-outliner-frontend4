@@ -63,7 +63,12 @@ export type TxMeta = {
   selection?: SelectionInfo;
 };
 
-export type TxStatus = "notCommit" | "pending" | "committed" | "rollbacked";
+export type TxStatus =
+  | "notCommit"
+  | "pending"
+  | "committed"
+  | "rollbacked"
+  | "aborted";
 
 export type Transaction = {
   ops: TxOpParams[];
@@ -93,6 +98,7 @@ export type TxObj = {
   getBlockData: (blockId: BlockId) => BlockDataInner | null;
   createBlockAfter: (baseId: BlockId, data: BlockDataInner) => BlockId;
   createBlockBefore: (baseId: BlockId, data: BlockDataInner) => BlockId;
+  abort: () => void;
 };
 
 type AppWithTx = AppStep10 & {
@@ -196,6 +202,10 @@ function execTx(
   tx: Transaction,
   idMapping: Record<BlockId, BlockId>
 ) {
+  if (tx.status === "aborted") {
+    console.log("tx aborted", tx);
+    return;
+  }
   if (tx.status !== "notCommit")
     throw new Error(`Transaction already ${tx.status}`);
   tx.status = "pending";
@@ -524,5 +534,6 @@ function createTxObj(app: AppWithTx): TxObj & { _tx: Transaction } {
       createBlockAfterToTx(app, tx, baseId, data),
     createBlockBefore: (baseId, data) =>
       createBlockBeforeToTx(app, tx, baseId, data),
+    abort: () => tx.status === "aborted",
   };
 }

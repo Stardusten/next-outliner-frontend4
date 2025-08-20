@@ -1747,3 +1747,62 @@ export function numberingChildren(
     throw new Error("未实现：numberingChildren");
   };
 }
+
+export function zoomin(editor: TiptapEditor): Command {
+  return function (state, dispatch) {
+    const listItemInfo = findCurrListItem(state);
+    if (!listItemInfo) return false;
+    const blockId = listItemInfo.node.attrs.blockId as BlockId;
+
+    const rootBlockIds = editor.appView.getRootBlockIds();
+    if (rootBlockIds.length === 0 && rootBlockIds[0] === blockId) return false;
+
+    if (!dispatch) return true;
+
+    editor.appView.app.withTx((tx) => {
+      editor.appView.setRootBlockIds([blockId]);
+      const children = tx.getChildrenIds(blockId) ?? [];
+      if (children.length > 0) {
+        tx.setSelection({
+          viewId: editor.appView.id,
+          blockId: children[0]!,
+          anchor: 0,
+        });
+        tx.setOrigin("localEditorStructural");
+      } else {
+        tx.abort();
+      }
+    });
+
+    return true;
+  };
+}
+
+export function zoomout(editor: TiptapEditor): Command {
+  return function (state, dispatch) {
+    editor.appView.app.withTx((tx) => {
+      const rootBlockIds = editor.appView.getRootBlockIds();
+      if (rootBlockIds.length > 1) {
+        tx.abort();
+        return;
+      }
+
+      const rootBlockId = rootBlockIds[0]!;
+      const parentId = tx.getParentId(rootBlockId);
+      if (parentId != null) {
+        editor.appView.setRootBlockIds([parentId]);
+      } else {
+        editor.appView.setRootBlockIds([]);
+      }
+      if (parentId) {
+        tx.setSelection({
+          viewId: editor.appView.id,
+          blockId: parentId,
+          anchor: 0,
+        });
+      }
+      tx.setOrigin("localEditorStructural");
+    });
+    return true;
+  };
+}

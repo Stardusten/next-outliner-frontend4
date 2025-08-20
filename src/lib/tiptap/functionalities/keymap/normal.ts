@@ -33,6 +33,8 @@ import {
   stopOnListItemBegin,
   stopOnListItemEnd,
   addFirstChild,
+  zoomin,
+  zoomout,
 } from "../../../app-views/editable-outline/commands";
 import { findCurrListItem } from "../../utils";
 
@@ -164,6 +166,8 @@ export const NormalKeymap = Extension.create({
         "Mod-z": undoCommand(editor),
         "Mod-Shift-z": redoCommand(editor),
         "Mod-Shift-x": addToBlockClipboard(editor),
+        "Mod-Shift-.": zoomin(editor),
+        "Mod-Shift-,": zoomout(editor),
       }),
     ];
   },
