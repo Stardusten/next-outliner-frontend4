@@ -40,7 +40,7 @@ const CodeBlockView = (props: CodeBlockViewProps) => {
     setLang(props.node.attrs.lang);
   });
 
-  const handleLangUpdate = (lang_: string) => {
+  const handleLangUpdate = (lang_: any) => {
     if (!blockId()) return;
     const cmd = updateCodeblockLang(props.editor, blockId(), lang_);
     props.editor.appView.execCommand(cmd, true);
@@ -49,7 +49,7 @@ const CodeBlockView = (props: CodeBlockViewProps) => {
 
   return (
     <pre class="relative">
-      <code class="codeblock-content"></code>
+      <code class="codeblock-content" spellcheck={false}></code>
 
       {/* 工具栏，仅当代码块被聚焦时显示 */}
       <Show when={focusedId() === blockId()}>
