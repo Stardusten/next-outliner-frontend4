@@ -19,10 +19,11 @@ import type { Emitter } from "mitt";
 import mitt from "mitt";
 import { nanoid } from "nanoid";
 import type { AppView, AppViewId } from "../types";
-import { renderOutline } from "./renderers/basic-outline";
-import { incrementalUpdate } from "./renderers/patchers";
 import { Accessor, createEffect, createSignal, Setter } from "solid-js";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
+import { FullRenderer } from "./renderers/full";
+import { Patcher } from "./renderers/patch";
+import { RenderOptions } from "./renderers/types";
 
 declare module "@tiptap/core" {
   interface Editor {
@@ -44,8 +45,8 @@ export type CompletionStatus = {
 export type EditableOutlineViewOptions = {
   id: AppViewId;
   rootBlockIds: BlockId[];
-  renderer: (editor: EditableOutlineView) => ProseMirrorNode;
   extensions: (AnyExtension | ExtensionFn)[];
+  expandFoldedRoot: boolean;
 };
 
 export type EditableOutlineViewEvents = {
@@ -59,18 +60,14 @@ export type EditableOutlineViewEvents = {
 
 type Signal<T> = [Accessor<T>, Setter<T>];
 
-const renderers = {
-  basicOutline: renderOutline,
-};
-
 function withDefaults(
   params: Partial<EditableOutlineViewOptions>
 ): EditableOutlineViewOptions {
   return {
     id: params.id ?? nanoid(),
     rootBlockIds: params.rootBlockIds ?? [],
-    renderer: params.renderer ?? renderers.basicOutline,
     extensions: params.extensions ?? schemaExts,
+    expandFoldedRoot: params.expandFoldedRoot ?? true,
   };
 }
 
@@ -80,29 +77,35 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   id: AppViewId;
   app: App;
   tiptap: TiptapEditor | null;
-  rootBlockIds: Signal<BlockId[]>;
-  renderer: (editor: EditableOutlineView) => ProseMirrorNode;
   extensions: AnyExtension[];
+
   // 事件监听器
   #appTxCommittedHandler: ((event: AppEvents["tx-committed"]) => void) | null;
   #focusHandler: (() => void) | null;
+
   // 事件总线
   eb: Emitter<EditableOutlineViewEvents>;
   on: Emitter<EditableOutlineViewEvents>["on"];
   off: Emitter<EditableOutlineViewEvents>["off"];
   deferredContentSyncTask: (() => void) | null;
+
   repoConfig: Accessor<RepoConfig | null>;
   focusedBlockId: Signal<BlockId | null>;
+  rootBlockIds: Signal<BlockId[]>;
 
-  constructor(app: App, params: Partial<EditableOutlineViewOptions> = {}) {
-    const options = withDefaults(params);
-    this.id = options.id;
+  // 渲染器
+  renderOptions: RenderOptions;
+  fullRenderer: FullRenderer;
+  patcher: Patcher;
+
+  constructor(app: App, params_: Partial<EditableOutlineViewOptions> = {}) {
+    const params = withDefaults(params_);
+    this.id = params.id;
     this.app = app;
     this.tiptap = null;
-    this.rootBlockIds = createSignal(options.rootBlockIds);
-    this.renderer = options.renderer;
-    this.extensions = options.extensions.map((extension) =>
-      typeof extension === "function" ? extension(this) : extension
+    this.rootBlockIds = createSignal(params.rootBlockIds);
+    this.extensions = params.extensions.map((e) =>
+      typeof e === "function" ? e(this) : e
     );
     this.#appTxCommittedHandler = null;
     this.#focusHandler = null;
@@ -112,6 +115,13 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     this.deferredContentSyncTask = null;
     this.repoConfig = useCurrRepoConfig(app);
     this.focusedBlockId = createSignal<BlockId | null>(null);
+
+    this.renderOptions = {
+      rootOnly: false,
+      expandFoldedRoot: params.expandFoldedRoot,
+    };
+    this.fullRenderer = FullRenderer.create(this);
+    this.patcher = Patcher.create(this);
 
     // 监听 rootBlockIds 的变化，如果变化，则重绘编辑器
     createEffect(() => {
@@ -312,8 +322,16 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   #rerender(selection?: SelectionInfo, fromStorageSync = false) {
     if (!this.tiptap) throw new Error("Editor not mounted");
 
+    // 计算根块
+    const [getRootBlockIds] = this.rootBlockIds;
+    let rootNodes = getRootBlockIds()
+      .map((id) => this.app.getBlockNode(id))
+      .filter((node) => node != null);
+
+    if (rootNodes.length == 0) rootNodes = this.app.tree.roots();
+
     // 整个文档替换
-    const newDoc = this.renderer(this);
+    const newDoc = this.fullRenderer.renderOutline(rootNodes);
     const state = this.tiptap.state;
     let tr = state.tr.replaceWith(0, state.doc.content.size, newDoc);
 
@@ -353,7 +371,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
 
     try {
       // 执行增量更新
-      incrementalUpdate(this, appTx);
+      this.patcher.updateView(appTx);
 
       // 恢复选区
       const selection = appTx.meta.selection;

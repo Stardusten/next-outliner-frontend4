@@ -1,3 +1,4 @@
+import { App } from "@/lib/app/app";
 import type { Component } from "solid-js";
 import { createSignal } from "solid-js";
 
@@ -28,14 +29,6 @@ export interface SubMenuItem extends BaseMenuEntry {
 
 export type MenuItem = ActionMenuItem | DividerMenuItem | SubMenuItem;
 
-const [isOpen, setIsOpen] = createSignal(false);
-const [anchorPoint, setAnchorPoint] = createSignal<{
-  x: number;
-  y: number;
-} | null>(null);
-const [items, setItems] = createSignal<MenuItem[]>([]);
-
-// 类型守卫
 function isMouseEvent(v: unknown): v is MouseEvent {
   return (
     !!v &&
@@ -50,31 +43,35 @@ function isHTMLElement(v: unknown): v is HTMLElement {
 
 type AnchorArg = { x: number; y: number } | MouseEvent | HTMLElement;
 
-// 命令式打开：支持传入坐标 / 鼠标事件 / 元素
-function open(anchor: AnchorArg, _items?: MenuItem[]) {
-  let point: { x: number; y: number } | null = null;
+export const useContextMenu = (app: App) => {
+  const { isOpenSignal, anchorPointSignal, itemsSignal } = app.contextmenu;
+  const [isOpen, setIsOpen] = isOpenSignal;
+  const [anchorPoint, setAnchorPoint] = anchorPointSignal;
+  const [items, setItems] = itemsSignal;
 
-  if (isMouseEvent(anchor)) {
-    point = { x: anchor.clientX, y: anchor.clientY };
-  } else if (isHTMLElement(anchor)) {
-    const rect = anchor.getBoundingClientRect();
-    point = { x: rect.left, y: rect.bottom };
-  } else {
-    point = anchor;
+  function open(anchor: AnchorArg, _items?: MenuItem[]) {
+    let point: { x: number; y: number } | null = null;
+
+    if (isMouseEvent(anchor)) {
+      point = { x: anchor.clientX, y: anchor.clientY };
+    } else if (isHTMLElement(anchor)) {
+      const rect = anchor.getBoundingClientRect();
+      point = { x: rect.left, y: rect.bottom };
+    } else {
+      point = anchor;
+    }
+
+    setAnchorPoint(point);
+    setItems(_items ?? []);
+    setIsOpen(true);
   }
 
-  setAnchorPoint(point);
-  setItems(_items ?? []);
-  setIsOpen(true);
-}
+  function close() {
+    // 仅关闭，不清空 anchor 或 items；
+    // 下次 open 会重新设置，避免关闭动画期间锚点丢失导致的闪烁。
+    setIsOpen(false);
+  }
 
-function close() {
-  // 仅关闭，不清空 anchor 或 items；
-  // 下次 open 会重新设置，避免关闭动画期间锚点丢失导致的闪烁。
-  setIsOpen(false);
-}
-
-export const useContextMenu = () => {
   return {
     // 状态
     isOpen,

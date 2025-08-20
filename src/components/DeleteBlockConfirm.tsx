@@ -19,7 +19,8 @@ interface DeleteConfirmDialogProps {
 
 export const DeleteBlockConfirm = (props: DeleteConfirmDialogProps) => {
   const { t } = useI18n();
-  const { _deleteBlockConfirm: deleteBlockConfirm } = useDialogs();
+  const app = props.editor.app;
+  const { _deleteBlockConfirm: deleteBlockConfirm } = useDialogs(app);
   const [open, setOpen] = deleteBlockConfirm.openSignal;
 
   const cancelDelete = () => setOpen(false);

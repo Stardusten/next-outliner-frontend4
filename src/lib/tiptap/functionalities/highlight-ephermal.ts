@@ -1,5 +1,5 @@
 import { Extension } from "@tiptap/core";
-import { Plugin } from "@tiptap/pm/state";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Mapping } from "@tiptap/pm/transform";
 import { Decoration, DecorationSet, EditorView } from "@tiptap/pm/view";
 import { nanoid } from "nanoid";
@@ -22,6 +22,7 @@ export const HighlightEphemeral = Extension.create({
   addProseMirrorPlugins() {
     let view: EditorView;
     const plugin: Plugin<DecorationSet> = new Plugin({
+      key: new PluginKey(HIGHLIGHT_EPHEMERAL),
       view: (view_) => {
         view = view_;
         return {};

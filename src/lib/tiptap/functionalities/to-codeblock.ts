@@ -3,7 +3,10 @@ import { inputRules, InputRule } from "@tiptap/pm/inputrules";
 import { TextSelection } from "@tiptap/pm/state";
 import { findCurrListItem } from "../utils";
 
+const TO_CODEBLOCK = "to-codeblock";
+
 export const ToCodeblock = Extension.create({
+  name: TO_CODEBLOCK,
   addProseMirrorPlugins() {
     const schema = this.editor.schema;
     const codeblock = schema.nodes.codeblock!;

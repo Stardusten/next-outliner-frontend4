@@ -1,10 +1,8 @@
-import { Node } from "@tiptap/core";
 import { fileInlineViewRenderer } from "@/components/node-views/FileInlineView";
 import { filePreviewViewRenderer } from "@/components/node-views/file-preview/FilePreviewView";
-import { useSettings } from "@/composables/useSettings";
-import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 import { App } from "@/lib/app/app";
+import { Node } from "@tiptap/core";
 
 export const File = Node.create({
   name: "file",

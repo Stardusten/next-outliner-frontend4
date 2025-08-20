@@ -417,7 +417,7 @@ export function deleteEmptyListItem(
     if (!dispatch) return true;
 
     if (confirm) {
-      const dialogs = useDialogs();
+      const dialogs = useDialogs(appview.app);
       dialogs.openDeleteBlockConfirm(blockId, focusTarget);
       return true;
     }

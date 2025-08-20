@@ -31,15 +31,11 @@ import {
 } from "../ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
-type Props = {
-  app: App;
-};
-
-export const MoreMenu = (props: Props) => {
+export const MoreMenu = (props: { app: App }) => {
   const { t } = useI18n();
   const { handleExport, handleImport, handleClearHistory, handleClearStorage } =
     useImportExport(props.app);
-  const { setVisible } = useSettings();
+  const { setVisible } = useSettings(props.app);
 
   const openInputDialog = () => {
     const input = document.createElement("input");
@@ -79,7 +75,7 @@ export const MoreMenu = (props: Props) => {
             <Paintbrush size={16} class="text-muted-foreground shrink-0" />
             <span>{t("moremenu.theme")}</span>
           </div>
-          <ThemeToggle />
+          <ThemeToggle app={props.app} />
         </div>
 
         {/* 行间距设置 */}
@@ -88,7 +84,7 @@ export const MoreMenu = (props: Props) => {
             <Menu size={16} class="text-muted-foreground shrink-0" />
             <span>{t("moremenu.lineSpace")}</span>
           </div>
-          <LineSpacingToggle />
+          <LineSpacingToggle app={props.app} />
         </div>
 
         <DropdownMenuItem>

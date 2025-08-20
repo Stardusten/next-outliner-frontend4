@@ -9,10 +9,9 @@ import { createMemo, createSignal } from "solid-js";
 import { useI18n } from "@/composables/useI18n";
 import { showToast } from "@/components/ui/toast";
 
-const [blockCutted, setBlockCutted] = createSignal<BlockId[]>([]);
-
 export function useBlockClipboard(app: App) {
   const { t } = useI18n();
+  const [blockCutted, setBlockCutted] = app.blockCutted;
 
   const blockNodesCutted = createMemo<BlockNode[]>(() => {
     const res: BlockNode[] = [];

@@ -142,7 +142,7 @@ const ListItemView = (props: ListItemViewProps) => {
 
   const handleRightClickBullet = (e: MouseEvent) => {
     e.preventDefault();
-    const { open } = useContextMenu();
+    const { open } = useContextMenu(props.editor.appView.app);
     const { t } = useI18n();
     const editor = props.editor;
     const blockId = props.node.attrs.blockId;

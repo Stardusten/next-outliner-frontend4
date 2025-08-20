@@ -2,12 +2,28 @@ import type { AppEvents } from "@/lib/app/app";
 import type { TxExecutedOperation } from "@/lib/app/tx";
 import { Node } from "@tiptap/pm/model";
 import type { EditableOutlineView } from "../editable-outline";
-import { renderBlock } from "./basic-outline";
+import { FullRenderer } from "./full";
+import { RenderOptions } from "./types";
+import { Transaction } from "@tiptap/pm/state";
 
-export function incrementalUpdate(
-  view: EditableOutlineView,
-  tx: AppEvents["tx-committed"]
-) {
+// 增量渲染器
+export class Patcher {
+  #view: EditableOutlineView;
+
+  private constructor(view: EditableOutlineView) {
+    this.#view = view;
+  }
+
+  static create(view: EditableOutlineView) {
+    return new Patcher(view);
+  }
+
+  updateView(tx: AppEvents["tx-committed"]) {
+    updateView(this.#view, tx);
+  }
+}
+
+function updateView(view: EditableOutlineView, tx: AppEvents["tx-committed"]) {
   const hasMoreThanOneDeleteOp =
     tx.executedOps.filter((op) => op.type === "block:delete").length > 1;
   if (hasMoreThanOneDeleteOp) {
@@ -39,8 +55,6 @@ export function incrementalUpdate(
     }
   }
 }
-
-// ================== 工具函数 ==================
 
 interface BlockPosition {
   pos: number;
@@ -208,7 +222,7 @@ function calculateSubtreeRange(
  */
 function updateRelatedBlocks(
   view: EditableOutlineView,
-  tr: any,
+  tr: Transaction,
   affectedParentIds: Set<string>
 ) {
   if (affectedParentIds.size === 0) return tr;
@@ -220,23 +234,22 @@ function updateRelatedBlocks(
     const blockPos = findBlockPosition(content, parentId);
     if (!blockPos) continue; // 父块可能已被删除或不存在
 
-    const listItem = content[blockPos.index];
+    const listItem = content[blockPos.index]!;
     const level = listItem.attrs.level;
 
     // 只重新渲染父块本身，不渲染子块
     const blockNode = view.app.getBlockNode(parentId as any);
     if (blockNode == null) continue;
 
-    const [newParentNode] = renderBlock({
-      editor: view,
+    const [newParentNode] = view.fullRenderer.renderBlock(
       blockNode,
       level,
-      rootOnly: true, // 只渲染根节点，不渲染子树
-    });
+      { rootOnly: true } // 只渲染根节点，不渲染子树
+    );
 
     // 只替换父块本身，保留所有子块
     const parentEndPos = blockPos.pos + listItem.nodeSize;
-    tr = tr.replaceWith(blockPos.pos, parentEndPos, newParentNode);
+    tr = tr.replaceWith(blockPos.pos, parentEndPos, newParentNode!);
   }
 
   return tr;
@@ -284,12 +297,11 @@ function handleBlockCreateOp(
   const blockNode = view.app.getBlockNode(op.blockId);
   if (blockNode == null) throw new Error("Block not found: " + op.blockId);
 
-  const [node] = renderBlock({
-    editor: view,
+  const [node] = view.fullRenderer.renderBlock(
     blockNode,
-    level: parentInfo.level + 1,
-    rootOnly: true,
-  });
+    parentInfo.level + 1,
+    {}
+  );
 
   tr = tr.insert(insertPos, node!);
 
@@ -317,20 +329,31 @@ function handleBlockUpdateOp(
 
   const listItem = content[blockPos.index]!;
   const level = listItem.attrs.level;
-  const range = calculateSubtreeRange(content, blockPos.index);
 
-  // 重新渲染整个子树
   const blockNode = view.app.getBlockNode(op.blockId);
   if (blockNode == null) throw new Error("Block not found: " + op.blockId);
 
-  const newNodes = renderBlock({
-    editor: view,
-    blockNode,
-    level,
-    rootOnly: false, // 渲染完整子树
-  });
+  // 仅当 folded 状态发生变化时，才重新渲染子树
+  // 其他时候都只渲染当前块
+  const needRerenderSubtree = op.oldData.folded !== op.newData.folded;
+  if (needRerenderSubtree) {
+    // 重新渲染整个子树
+    const range = calculateSubtreeRange(content, blockPos.index);
 
-  tr = tr.replaceWith(range.start, range.end, newNodes);
+    const newNodes = view.fullRenderer.renderBlock(blockNode, level, {});
+    tr = tr.replaceWith(range.start, range.end, newNodes);
+  } else {
+    // 仅渲染当前块
+    const [newNode] = view.fullRenderer.renderBlock(blockNode, level, {
+      rootOnly: true,
+    });
+    tr = tr.replaceWith(
+      blockPos.pos,
+      blockPos.pos + listItem.nodeSize,
+      newNode!
+    );
+  }
+
   view.tiptap.view.dispatch(tr);
 }
 
@@ -403,12 +426,11 @@ function handleBlockMoveOp(
   const blockNode = view.app.getBlockNode(op.blockId);
   if (blockNode == null) throw new Error("Block not found: " + op.blockId);
 
-  const newNodes = renderBlock({
-    editor: view,
+  const newNodes = view.fullRenderer.renderBlock(
     blockNode,
-    level: parentInfo.level + 1,
-    rootOnly: false, // 渲染完整子树
-  });
+    parentInfo.level + 1,
+    {}
+  );
 
   tr = tr.insert(insertPos, newNodes);
 

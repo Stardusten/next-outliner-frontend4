@@ -1,13 +1,9 @@
+import { App } from "@/lib/app/app";
 import { BlockId, SelectionInfo } from "@/lib/common/types";
-import { createSignal } from "solid-js";
 
-const _deleteBlockConfirm = {
-  openSignal: createSignal(false),
-  blockId: null as BlockId | null,
-  selection: undefined as SelectionInfo | undefined,
-};
+export const useDialogs = (app: App) => {
+  const _deleteBlockConfirm = app.deleteBlockConfirm;
 
-export const useDialogs = () => {
   const openDeleteBlockConfirm = (
     blockId: BlockId,
     selection?: SelectionInfo

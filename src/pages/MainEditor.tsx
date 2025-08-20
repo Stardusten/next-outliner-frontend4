@@ -19,11 +19,12 @@ import { NormalKeymap } from "@/lib/tiptap/functionalities/keymap/normal";
 import { PasteHtmlOrPlainText } from "@/lib/tiptap/functionalities/paste-html";
 import PasteImage from "@/lib/tiptap/functionalities/paste-image";
 import { SafariImeSpan } from "@/lib/tiptap/functionalities/safari-ime-span";
+import { SelectNodeView } from "@/lib/tiptap/functionalities/SelectNodeview";
 import { ToCodeblock } from "@/lib/tiptap/functionalities/to-codeblock";
 import { ToNumbered } from "@/lib/tiptap/functionalities/to-numbered";
 import { markExtensions } from "@/lib/tiptap/marks";
 import { nodeExtensions } from "@/lib/tiptap/nodes";
-import { createSignal, onMount } from "solid-js";
+import { createSignal, onMount, Show } from "solid-js";
 
 type Props = {
   app: App;
@@ -34,7 +35,7 @@ export const MainEditor = (props: Props) => {
   const [mainEditorView, setMainEditorView] =
     createSignal<EditableOutlineView | null>(null);
   const completion = useBlockRefCompletion(props.app);
-  const [mainRoots, setMainRoots] = useMainRoots();
+  const [mainRoots, setMainRoots] = useMainRoots(props.app);
   const { handleKeydown } = useAppKeybinding(props.app);
 
   onMount(() => {
@@ -56,6 +57,7 @@ export const MainEditor = (props: Props) => {
         PasteImage,
         FocusedBlockIdTracker,
         HighlightEphemeral,
+        SelectNodeView,
       ],
     });
     props.app.registerAppView(mainEditorView_);
@@ -90,12 +92,14 @@ export const MainEditor = (props: Props) => {
         ></div>
       </div>
 
-      <CompletionPopup editor={mainEditorView()!} completion={completion} />
-      <ContextMenuGlobal />
-      <ImportConfirmDialog app={props.app} />
-      <ClearStorageConfirmDialog app={props.app} />
-      <SettingsPanel />
-      <DeleteBlockConfirm editor={mainEditorView()!} />
+      <Show when={mainEditorView()}>
+        <CompletionPopup editor={mainEditorView()!} completion={completion} />
+        <ContextMenuGlobal app={props.app} />
+        <ImportConfirmDialog app={props.app} />
+        <ClearStorageConfirmDialog app={props.app} />
+        <SettingsPanel app={props.app} />
+        <DeleteBlockConfirm editor={mainEditorView()!} />
+      </Show>
     </>
   );
 };

@@ -11,6 +11,7 @@ import { Brain, Database, Info, PaintRoller, Settings } from "lucide-solid";
 import TestOssConnection from "@/components/settings/TestOssConnection";
 import RepoInfo from "@/components/settings/RepoInfo";
 import { useCurrRepoConfig } from "./useCurrRepoConfig";
+import { App } from "@/lib/app/app";
 
 // 设置路径类型
 export type SettingPath =
@@ -42,6 +43,7 @@ export type SettingCondition = (config: RepoConfig) => boolean;
 // 渲染上下文
 export interface SettingRenderContext {
   config: RepoConfig;
+  app: App;
   getSetting: (path: SettingPath) => any;
   saveSetting: (path: SettingPath, value: any) => void;
   resetSetting: (path: SettingPath) => void;
@@ -519,11 +521,11 @@ const sidebarSections: SidebarSection[] = [
   },
 ];
 
-// 全局状态
-const [visible, setVisible] = createSignal(false);
-const [currentPage, setCurrentPage] = createSignal(settingsConfig[0]?.id || "");
+export function useSettings(app: App) {
+  const { visibleSignal, currentPageSignal } = app.settings;
+  const [visible, setVisible] = visibleSignal;
+  const [currentPage, setCurrentPage] = currentPageSignal;
 
-export function useSettings() {
   const { addConfig } = useRepoConfigs();
   const currentRepo = useCurrRepoConfig();
 
@@ -544,11 +546,11 @@ export function useSettings() {
     const result = { ...obj };
     let cursor: any = result;
     for (let i = 0; i < keys.length - 1; i++) {
-      const key = keys[i];
+      const key = keys[i]!;
       cursor[key] = { ...cursor[key] };
       cursor = cursor[key];
     }
-    cursor[keys[keys.length - 1]] = value;
+    cursor[keys[keys.length - 1]!] = value;
     return result;
   };
 

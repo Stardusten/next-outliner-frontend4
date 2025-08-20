@@ -8,12 +8,14 @@ export type SearchResult = {
   score?: number;
 };
 
-const [searchVisible, setSearchVisible] = createSignal(false);
-const [searchQuery, setSearchQuery] = createSignal("");
-const [searchResults, setSearchResults] = createSignal<SearchResult[]>([]);
-const [activeIndex, setActiveIndex] = createSignal(0);
-
 export function useSearch(app: App) {
+  const { visibleSignal, querySignal, resultsSignal, activeIndexSignal } =
+    app.search;
+  const [searchVisible, setSearchVisible] = visibleSignal;
+  const [searchQuery, setSearchQuery] = querySignal;
+  const [searchResults, setSearchResults] = resultsSignal;
+  const [activeIndex, setActiveIndex] = activeIndexSignal;
+
   const performSearch = (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);

@@ -120,6 +120,7 @@
   --editor-codeblock-line-height: 1.4;
   --highlight-keep: #ffe066;
   --tag-font-size: 0.8em;
+  --color-selection: oklch(0.85 0.15 257.48 / 0.3);
 
   /* 语法高亮颜色 */
   --color-syntax-comment: #6a737d;
@@ -201,7 +202,7 @@ html[data-kb-theme="dark"] {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.488 0.243 264.376);
-
+  --color-selection: oklch(0.6 0.2 253.31 / 0.4);
   --color-guide-line: #30363d;
   --highlight-keep: rgb(0, 102, 153);
 
@@ -269,4 +270,8 @@ html[data-kb-theme="dark"] {
 
 ::-webkit-scrollbar-corner {
   background-color: var(--color-background);
+}
+
+::selection {
+  background-color: var(--color-selection);
 }

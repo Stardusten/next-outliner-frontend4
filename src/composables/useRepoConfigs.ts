@@ -3,6 +3,8 @@ import { repoConfigSchema, type RepoConfig } from "@/lib/repo/schema";
 import { useNavigate } from "@solidjs/router";
 import { createMemo, createSignal } from "solid-js";
 
+// 说明：repoConfigs 可能在库管理页面使用，此时 app 都没有创建
+// 因此这些视图状态做成全局的比较好，不要放到 app 的 ui-states 里面
 const REPO_CONFIGS_STORAGE_KEY = "repo-configs";
 const [_configs, setConfigs] = createSignal<RepoConfig[]>([]);
 let _initialized = false;

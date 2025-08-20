@@ -1,12 +1,10 @@
+import { App } from "@/lib/app/app";
 import { BlockId } from "@/lib/common/types";
-import { Signal } from "solid-js";
 import { useLocalStorage } from "./useLocalStorage";
 
-let mainRoots: Signal<BlockId[]> | null = null;
-
-export const useMainRoots = () => {
-  if (!mainRoots) {
-    mainRoots = useLocalStorage<BlockId[]>("mainRoots", []);
+export const useMainRoots = (app: App) => {
+  if (!app.mainRoots) {
+    app.mainRoots = useLocalStorage<BlockId[]>("mainRoots", []);
   }
-  return mainRoots;
+  return app.mainRoots;
 };

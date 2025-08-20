@@ -22,13 +22,14 @@ type Block = {
   fractionalIndex: number;
   content: string;
   children: Block[];
+  number?: string;
 };
 
 export const EXPORT_FORMATS = ".jsonl,.bsnapshot,.snapshot";
 
 type ExportFormat = "jsonl" | "bsnapshot" | "snapshot";
 
-type PendingImport =
+export type PendingImport =
   | {
       format: "bsnapshot";
       doc: LoroDoc;
@@ -76,17 +77,23 @@ function base64ToUint8(b64: string): Uint8Array {
   return u8;
 }
 
-const [importDialogVisible, setImportDialogVisible] = createSignal(false);
-const [importBlockCount, setImportBlockCount] = createSignal(0);
-const [pendingImport, setPendingImport] = createSignal<PendingImport | null>(
-  null
-);
-const [clearStorageDialogVisible, setClearStorageDialogVisible] =
-  createSignal(false);
-const [clearHistoryDialogVisible, setClearHistoryDialogVisible] =
-  createSignal(false);
-
 export function useImportExport(app: App) {
+  const {
+    importDialogVisibleSignal,
+    importBlockCountSignal,
+    pendingImportSignal,
+    clearStorageDialogVisibleSignal,
+    clearHistoryDialogVisibleSignal,
+  } = app.importExport;
+  const [importDialogVisible, setImportDialogVisible] =
+    importDialogVisibleSignal;
+  const [importBlockCount, setImportBlockCount] = importBlockCountSignal;
+  const [pendingImport, setPendingImport] = pendingImportSignal;
+  const [clearStorageDialogVisible, setClearStorageDialogVisible] =
+    clearStorageDialogVisibleSignal;
+  const [clearHistoryDialogVisible, setClearHistoryDialogVisible] =
+    clearHistoryDialogVisibleSignal;
+
   // 导出功能
   const handleExport = (format: ExportFormat = "bsnapshot") => {
     if (format == "snapshot") {
@@ -176,11 +183,11 @@ export function useImportExport(app: App) {
     const nodeJson = JSON.parse(content);
     const schema = app.detachedSchema;
     const node = schema.nodeFromJSON(nodeJson);
-    const blockRefType = schema.nodes.blockRef;
-    const paragraphType = schema.nodes.paragraph;
-    const codeblockType = schema.nodes.codeblock;
-    const searchType = schema.nodes.search;
-    const tagType = schema.nodes.tag;
+    const blockRefType = schema.nodes.blockRef!;
+    const paragraphType = schema.nodes.paragraph!;
+    const codeblockType = schema.nodes.codeblock!;
+    const searchType = schema.nodes.search!;
+    const tagType = schema.nodes.tag!;
 
     const recur = (fragment: Fragment) => {
       const result: Node[] = [];
@@ -188,7 +195,7 @@ export function useImportExport(app: App) {
       fragment.forEach((child) => {
         if (child.type === blockRefType) {
           const oldId = child.attrs.blockId;
-          const newId = tmp2new[old2tmp[oldId]] ?? oldId;
+          const newId = tmp2new[old2tmp[oldId]!] ?? oldId;
           const newNode = blockRefType.create({
             ...child.attrs,
             blockId: newId,
@@ -272,11 +279,12 @@ export function useImportExport(app: App) {
         const { idMapping: tmp2New } = await withTx(app, (tx) => {
           const createTree = (block: Block, newBlockId: BlockId) => {
             for (let i = 0; i < block.children.length; i++) {
-              const child = block.children[i];
+              const child = block.children[i]!;
               const newChildId = tx.createBlockUnder(newBlockId, i, {
                 type: child.type,
                 folded: child.folded,
                 content: child.content, // 临时内容，之后需要应用 idMapping
+                number: child.number,
               });
               old2Tmp[child.id] = newChildId;
               createTree(child, newChildId);
@@ -291,6 +299,7 @@ export function useImportExport(app: App) {
                 type: block.type,
                 folded: block.folded,
                 content: block.content, // 临时内容，之后需要应用 idMapping
+                number: block.number,
               });
               old2Tmp[block.id] = rootBlockId;
               createTree(block, rootBlockId);
@@ -328,13 +337,9 @@ export function useImportExport(app: App) {
           const createTree = (node1: BlockNode, node2Id: BlockId) => {
             const node1children = node1.children() ?? [];
             for (let i = 0; i < node1children.length; i++) {
-              const child = node1children[i];
+              const child = node1children[i]!;
               const childData = child.data.toJSON() as BlockDataInner;
-              const newChildId = tx.createBlockUnder(node2Id, i, {
-                type: childData.type,
-                folded: childData.folded,
-                content: childData.content, // 临时内容，之后需要应用 idMapping
-              });
+              const newChildId = tx.createBlockUnder(node2Id, i, childData);
               old2Tmp[child.id] = newChildId;
               createTree(child, newChildId);
             }
@@ -343,13 +348,9 @@ export function useImportExport(app: App) {
           const importedTree = importedDoc.getTree(BLOCKS_TREE_NAME);
           const importedRoots = importedTree.roots();
           for (let i = 0; i < importedRoots.length; i++) {
-            const root1 = importedRoots[i];
+            const root1 = importedRoots[i]!;
             const rootData = root1.data.toJSON() as BlockDataInner;
-            const newRootId = tx.createBlockUnder(null, i, {
-              type: rootData.type,
-              folded: rootData.folded,
-              content: rootData.content, // 临时内容，之后需要应用 idMapping
-            });
+            const newRootId = tx.createBlockUnder(null, i, rootData);
             old2Tmp[root1.id] = newRootId;
             createTree(root1, newRootId);
           }
@@ -407,7 +408,7 @@ export function useImportExport(app: App) {
       forceSave(app);
       // 清空块存储记得也要清空 main editor 的根块，
       // 因为之前的根块可能已经不存在了
-      const [mainRoots, setMainRoots] = useMainRoots();
+      const [mainRoots, setMainRoots] = useMainRoots(app);
       setMainRoots([]);
       showToast({
         title: "成功清空存储！",

@@ -13,9 +13,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dynamic } from "solid-js/web";
+import { App } from "@/lib/app/app";
 
-export const ContextMenuGlobal: Component = () => {
-  const ctx = useContextMenu();
+export const ContextMenuGlobal = (props: { app: App }) => {
+  const ctx = useContextMenu(props.app);
   const { close } = ctx;
 
   const handleClick = (menuItem: MenuItem) => {

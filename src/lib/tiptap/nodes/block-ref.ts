@@ -5,6 +5,7 @@ export const BlockRef = Node.create({
   name: "blockRef",
   group: "inline",
   inline: true,
+  selectable: false,
   addAttributes() {
     return {
       blockId: { default: null },

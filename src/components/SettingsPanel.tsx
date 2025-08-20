@@ -42,8 +42,9 @@ import type {
   SettingRenderContext,
 } from "@/composables/useSettings";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
+import { App } from "@/lib/app/app";
 
-export const SettingsPanel = () => {
+export const SettingsPanel = (props: { app: App }) => {
   const {
     visible,
     setVisible,
@@ -55,12 +56,13 @@ export const SettingsPanel = () => {
     saveSetting,
     resetSetting,
     evaluateCondition,
-  } = useSettings();
+  } = useSettings(props.app);
 
   const currentRepo = useCurrRepoConfig();
 
   const renderContext = createMemo<SettingRenderContext>(() => ({
     config: currentRepo()!,
+    app: props.app,
     getSetting,
     saveSetting,
     resetSetting,
@@ -196,17 +198,41 @@ const SettingItemView = (props: {
 }) => {
   switch (props.setting.type) {
     case "toggle":
-      return <SwitchComp setting={props.setting} />;
+      return (
+        <SwitchComp setting={props.setting} app={props.renderContext.app} />
+      );
     case "single-select":
-      return <SingleSelectComp setting={props.setting} />;
+      return (
+        <SingleSelectComp
+          setting={props.setting}
+          app={props.renderContext.app}
+        />
+      );
     case "multi-select":
-      return <MultiSelectComp setting={props.setting} />;
+      return (
+        <MultiSelectComp
+          setting={props.setting}
+          app={props.renderContext.app}
+        />
+      );
     case "input":
-      return <TextInputComp setting={props.setting} />;
+      return (
+        <TextInputComp setting={props.setting} app={props.renderContext.app} />
+      );
     case "number":
-      return <NumberInputComp setting={props.setting} />;
+      return (
+        <NumberInputComp
+          setting={props.setting}
+          app={props.renderContext.app}
+        />
+      );
     case "font":
-      return <FontSelectorComp setting={props.setting} />;
+      return (
+        <FontSelectorComp
+          setting={props.setting}
+          app={props.renderContext.app}
+        />
+      );
     case "custom":
       return (
         <CustomComp
@@ -219,13 +245,13 @@ const SettingItemView = (props: {
   }
 };
 
-const SwitchComp = (props: { setting: ToggleSetting }) => {
-  const { getSetting, saveSetting } = useSettings();
+const SwitchComp = (props: { setting: ToggleSetting; app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
   const val = () =>
-    (getSetting(props.setting.settingPath) as boolean | undefined) ??
+    (getSetting(props.setting.settingPath!) as boolean | undefined) ??
     props.setting.defaultValue;
   const onChange = (checked: boolean) =>
-    saveSetting(props.setting.settingPath, checked);
+    saveSetting(props.setting.settingPath!, checked);
   return (
     <Switch checked={!!val()} onChange={onChange}>
       <SwitchControl>
@@ -235,10 +261,13 @@ const SwitchComp = (props: { setting: ToggleSetting }) => {
   );
 };
 
-const SingleSelectComp = (props: { setting: SingleSelectSetting }) => {
-  const { getSetting, saveSetting } = useSettings();
+const SingleSelectComp = (props: {
+  setting: SingleSelectSetting;
+  app: App;
+}) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
   const value = () =>
-    (getSetting(props.setting.settingPath) as string | undefined) ??
+    (getSetting(props.setting.settingPath!) as string | undefined) ??
     props.setting.defaultValue;
   const options = props.setting.options;
   const idToLabel = (id?: string) =>
@@ -247,7 +276,7 @@ const SingleSelectComp = (props: { setting: SingleSelectSetting }) => {
     <div>
       <Select
         value={value()}
-        onChange={(v) => saveSetting(props.setting.settingPath, v as string)}
+        onChange={(v) => saveSetting(props.setting.settingPath!, v as string)}
         options={options.map((o) => o.id)}
         multiple={false}
         itemComponent={(opt) => (
@@ -268,17 +297,17 @@ const SingleSelectComp = (props: { setting: SingleSelectSetting }) => {
   );
 };
 
-const MultiSelectComp = (props: { setting: MultiSelectSetting }) => {
-  const { getSetting, saveSetting } = useSettings();
+const MultiSelectComp = (props: { setting: MultiSelectSetting; app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
   const value = () =>
-    ((getSetting(props.setting.settingPath) as string[] | undefined) ??
+    ((getSetting(props.setting.settingPath!) as string[] | undefined) ??
       props.setting.defaultValue) as string[];
   const options = props.setting.options;
   const toggle = (id: string) => {
     const set = new Set(value());
     if (set.has(id)) set.delete(id);
     else set.add(id);
-    saveSetting(props.setting.settingPath, Array.from(set));
+    saveSetting(props.setting.settingPath!, Array.from(set));
   };
   return (
     <div class="flex flex-wrap gap-1">
@@ -298,10 +327,10 @@ const MultiSelectComp = (props: { setting: MultiSelectSetting }) => {
   );
 };
 
-const TextInputComp = (props: { setting: InputSetting }) => {
-  const { getSetting, saveSetting } = useSettings();
+const TextInputComp = (props: { setting: InputSetting; app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
   const current = () =>
-    (getSetting(props.setting.settingPath) as string | undefined) ??
+    (getSetting(props.setting.settingPath!) as string | undefined) ??
     props.setting.defaultValue;
   const [localValue, setLocalValue] = createSignal<string>(current());
   createEffect(() => {
@@ -313,7 +342,7 @@ const TextInputComp = (props: { setting: InputSetting }) => {
     setLocalValue(e.currentTarget.value);
   };
   const onBlur = () => {
-    saveSetting(props.setting.settingPath, localValue());
+    saveSetting(props.setting.settingPath!, localValue());
   };
   return (
     <TextField class="w-[320px]">
@@ -328,10 +357,10 @@ const TextInputComp = (props: { setting: InputSetting }) => {
   );
 };
 
-const NumberInputComp = (props: { setting: NumberSetting }) => {
-  const { getSetting, saveSetting } = useSettings();
+const NumberInputComp = (props: { setting: NumberSetting; app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
   const current = () =>
-    (getSetting(props.setting.settingPath) as number | undefined) ??
+    (getSetting(props.setting.settingPath!) as number | undefined) ??
     props.setting.defaultValue;
   const [localValue, setLocalValue] = createSignal<string>(String(current()));
   createEffect(() => {
@@ -344,11 +373,11 @@ const NumberInputComp = (props: { setting: NumberSetting }) => {
     const v = localValue();
     if (v === "") {
       // 若允许空值则可选择不保存；此处保存空串
-      saveSetting(props.setting.settingPath, "");
+      saveSetting(props.setting.settingPath!, "");
       return;
     }
     const n = Number(v);
-    if (!Number.isNaN(n)) saveSetting(props.setting.settingPath, n);
+    if (!Number.isNaN(n)) saveSetting(props.setting.settingPath!, n);
   };
   return (
     <TextField class="w-[200px]">
@@ -365,10 +394,10 @@ const NumberInputComp = (props: { setting: NumberSetting }) => {
   );
 };
 
-const FontSelectorComp = (props: { setting: FontSetting }) => {
-  const { getSetting, saveSetting, resetSetting } = useSettings();
+const FontSelectorComp = (props: { setting: FontSetting; app: App }) => {
+  const { getSetting, saveSetting, resetSetting } = useSettings(props.app);
   const value = () =>
-    (getSetting(props.setting.settingPath) as string | undefined) ??
+    (getSetting(props.setting.settingPath!) as string | undefined) ??
     props.setting.defaultValue;
 
   const systemFonts = [
@@ -442,13 +471,13 @@ const FontSelectorComp = (props: { setting: FontSetting }) => {
   const checkCustom = () => {
     const name = customFont();
     if (!name) return setIsAvailable(false);
-    setIsAvailable(checkFontAvailability([name])[0]);
+    setIsAvailable(checkFontAvailability([name])[0]!);
   };
   const addCustomFont = () => {
     const name = customFont();
     if (!name) return;
     if (!fontNames().includes(name)) setFontNames([...fontNames(), name]);
-    saveSetting(props.setting.settingPath, name);
+    saveSetting(props.setting.settingPath!, name);
     setShowAdd(false);
   };
 
@@ -456,7 +485,7 @@ const FontSelectorComp = (props: { setting: FontSetting }) => {
     <div class="flex items-center gap-2">
       <Select
         value={value()}
-        onChange={(v) => saveSetting(props.setting.settingPath, v as string)}
+        onChange={(v) => saveSetting(props.setting.settingPath!, v as string)}
         options={fontNames()}
         multiple={false}
         itemComponent={(opt) => (

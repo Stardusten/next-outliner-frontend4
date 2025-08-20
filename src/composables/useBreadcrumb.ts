@@ -15,7 +15,7 @@ type BreadcrumbItem = {
 };
 
 export const useBreadcrumb = (app: App) => {
-  const [mainRoots, setMainRoots] = useMainRoots();
+  const [mainRoots] = useMainRoots(app);
   const currentRepo = useCurrRepoConfig();
 
   const items = createMemo(() => {

@@ -1,30 +1,40 @@
-import type { BlockId } from "../common/types";
+import { LoroTreeNode } from "loro-crdt";
+import type { BlockId, BlockNode } from "../common/types";
 import type { App } from "./app";
 
-export function execQuery(app: App, query: string): BlockId[] | Error {
+export function execQuery(app: App, query: string): BlockNode[] | Error {
+  const toBlockNodes = (blockIds: BlockId[]) => {
+    const res = <BlockNode[]>[];
+    for (const blockId of blockIds) {
+      const blockNode = app.getBlockNode(blockId);
+      if (blockNode) res.push(blockNode);
+    }
+    return res;
+  };
+
   const hasRefTo = (blockId: BlockId) => {
-    const [get, _] = app.getInRefs(blockId);
-    return [...get()];
+    const [getter, _] = app.getInRefs(blockId);
+    return toBlockNodes([...getter()]);
   };
 
   const hasTagTo = (blockId: BlockId) => {
-    const [get, _] = app.getInTags(blockId);
-    return [...get()];
+    const [getter, _] = app.getInTags(blockId);
+    return toBlockNodes([...getter()]);
   };
 
   const hasRefOrTagTo = (blockId: BlockId) => {
-    const [get1, _1] = app.getInRefs(blockId);
-    const [get2, _2] = app.getInTags(blockId);
-    return [...get1(), ...get2()];
+    const [getter1, _1] = app.getInRefs(blockId);
+    const [getter2, _2] = app.getInTags(blockId);
+    return toBlockNodes([...getter1(), ...getter2()]);
   };
 
   const all = () => {
-    return app.tree.getNodes().map((node) => node.id);
+    return app.tree.getNodes();
   };
 
   const fuzzyMatch = (query: string, limit?: number) => {
     const res = app.searchBlocks(query, limit);
-    return res;
+    return toBlockNodes(res);
   };
 
   try {
@@ -39,7 +49,7 @@ export function execQuery(app: App, query: string): BlockId[] | Error {
     if (!Array.isArray(res))
       throw new Error("Query result should be array of blockId");
     for (const elem of res) {
-      if (typeof elem != "string")
+      if (!(elem instanceof LoroTreeNode))
         throw new Error("Query result should be array of blockId");
     }
     return res;

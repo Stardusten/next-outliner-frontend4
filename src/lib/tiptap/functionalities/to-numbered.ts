@@ -3,7 +3,10 @@ import { InputRule, inputRules } from "@tiptap/pm/inputrules";
 import { contentNodeToStr, findCurrListItem } from "../utils";
 import { BlockId } from "@/lib/common/types";
 
+const TO_NUMBERED = "to-numbered";
+
 export const ToNumbered = Extension.create({
+  name: TO_NUMBERED,
   addProseMirrorPlugins() {
     const re =
       /^((?:\(|（)?(?:[1-9]|10|[a-j]|[A-J]|I|II|III|IV|V|VI|VII|VIII|IX|X|i|ii|iii|iv|v|vi|vii|viii|ix|x|一|二|三|四|五|六|七|八|九|十)(?:\)|）)?[\.、]?)\s/;

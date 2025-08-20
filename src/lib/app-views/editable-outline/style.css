@@ -435,8 +435,10 @@ div.list-item-x.level-15 {
     calc(23px - 16 * 32px) 0px 0px var(--color-background);
 }
 
+/* 块引用样式 */
 span.block-ref:not(.tag) {
   color: var(--color-block-ref);
+  cursor: pointer;
   text-decoration: underline;
   text-decoration-color: var(--color-block-ref-dash);
   text-decoration-style: dashed;
@@ -444,8 +446,13 @@ span.block-ref:not(.tag) {
   text-decoration-thickness: 1px;
 }
 
-span.block-ref:not(.tag):hover,
-span.block-ref:not(.tag).selected {
+/* 块引用和标签被选中时的样式 */
+span.block-ref.selected {
+  background-color: var(--color-selection) !important;
+}
+
+/* hover 一个块引用时的样式 */
+span.block-ref:not(.tag):hover {
   background-color: var(--color-muted);
 }
 

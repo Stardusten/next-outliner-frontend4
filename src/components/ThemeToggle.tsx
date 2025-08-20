@@ -1,9 +1,10 @@
 import type { Component } from "solid-js";
 import { createMemo } from "solid-js";
 import { useSettings } from "@/composables/useSettings";
+import { App } from "@/lib/app/app";
 
-export const ThemeToggle: Component = () => {
-  const { getSetting, saveSetting } = useSettings();
+export const ThemeToggle = (props: { app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
 
   const theme = createMemo<string>(() => getSetting("ui.theme") || "light");
 
