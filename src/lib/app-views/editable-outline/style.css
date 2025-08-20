@@ -655,12 +655,12 @@ div.list-item-x.highlighted * {
 
 /* 列表项 */
 .single-root div.list-item-x {
-  margin-left: calc(var(--level) * 32px + 36px - 32px);
+  margin-left: calc(var(--level) * 32px - 32px);
 }
 
 /* 根块放大 */
 .single-root div.list-item-x:first-of-type {
-  margin-left: calc(36px - 20px);
+  margin-left: calc(-18px);
   padding-bottom: 1.5em;
   font-size: 1.5em;
 }
