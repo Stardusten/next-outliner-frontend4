@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/header/AppHeader";
 import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDialog";
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
 import SettingsPanel from "@/components/SettingsPanel";
+import { TagSelector } from "@/components/TagSelector";
 import { useAppKeybinding } from "@/composables/useAppKeybinding";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 import { useMainRoots } from "@/composables/useMainRoots";
@@ -74,9 +75,6 @@ export const MainEditor = (props: Props) => {
     mainEditorView_.on("root-blocks-changed", (event) => {
       setMainRoots(event.rootBlockIds);
     });
-    mainEditorView_.on("*", (key, event) => {
-      completion.handleCompletionRelatedEvent(mainEditorView_, key, event);
-    });
 
     setMainEditorView(mainEditorView_);
   });
@@ -93,12 +91,13 @@ export const MainEditor = (props: Props) => {
       </div>
 
       <Show when={mainEditorView()}>
-        <CompletionPopup editor={mainEditorView()!} completion={completion} />
+        <CompletionPopup editor={mainEditorView()!} />
         <ContextMenuGlobal app={props.app} />
         <ImportConfirmDialog app={props.app} />
         <ClearStorageConfirmDialog app={props.app} />
         <SettingsPanel app={props.app} />
         <DeleteBlockConfirm editor={mainEditorView()!} />
+        <TagSelector app={props.app} />
       </Show>
     </>
   );

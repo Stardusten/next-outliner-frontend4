@@ -1,7 +1,7 @@
 import type { BlockDataInner, BlockId } from "@/lib/common/types";
 import { createSignal, type Accessor, type Setter } from "solid-js";
 import type { AppStep3 } from "../app";
-import { getBlockRefs } from "../util";
+import { extractBlockRefs } from "../util";
 
 type Signal<T> = [Accessor<T>, Setter<T>];
 
@@ -27,8 +27,8 @@ export function initInRefsAndInTags(app: AppStep3) {
         if (blockData.type === "text" || blockData.type === "code") {
           const nodeJson = JSON.parse(blockData.content);
           const pmNode = schema.nodeFromJSON(nodeJson);
-          const refs = getBlockRefs(pmNode, false);
-          const tags = getBlockRefs(pmNode, true);
+          const refs = extractBlockRefs(pmNode, false);
+          const tags = extractBlockRefs(pmNode, true);
           for (const ref of refs) addInRef(ret, ref, change.blockId);
           for (const tag of tags) addInTag(ret, tag, change.blockId);
         }
@@ -38,8 +38,8 @@ export function initInRefsAndInTags(app: AppStep3) {
         if (blockData.type === "text" || blockData.type === "code") {
           const nodeJson = JSON.parse(blockData.content);
           const pmNode = schema.nodeFromJSON(nodeJson);
-          const refs = getBlockRefs(pmNode, false);
-          const tags = getBlockRefs(pmNode, true);
+          const refs = extractBlockRefs(pmNode, false);
+          const tags = extractBlockRefs(pmNode, true);
           for (const ref of refs) removeInRef(ret, ref, change.blockId);
           for (const tag of tags) removeInTag(ret, tag, change.blockId);
         }
@@ -48,16 +48,16 @@ export function initInRefsAndInTags(app: AppStep3) {
         if (oldData.type === "text" || oldData.type === "code") {
           const oldJson = JSON.parse(oldData.content);
           const oldPmNode = schema.nodeFromJSON(oldJson);
-          const oldRefs = getBlockRefs(oldPmNode, false);
-          const oldTags = getBlockRefs(oldPmNode, true);
+          const oldRefs = extractBlockRefs(oldPmNode, false);
+          const oldTags = extractBlockRefs(oldPmNode, true);
           for (const ref of oldRefs) removeInRef(ret, ref, blockId);
           for (const tag of oldTags) removeInTag(ret, tag, blockId);
         }
         if (newData && (newData.type === "text" || newData.type === "code")) {
           const newJson = JSON.parse(newData.content);
           const newPmNode = schema.nodeFromJSON(newJson);
-          const refs = getBlockRefs(newPmNode, false);
-          const tags = getBlockRefs(newPmNode, true);
+          const refs = extractBlockRefs(newPmNode, false);
+          const tags = extractBlockRefs(newPmNode, true);
           for (const ref of refs) addInRef(ret, ref, blockId);
           for (const tag of tags) addInTag(ret, tag, blockId);
         }
@@ -119,7 +119,7 @@ export function refreshInRefs(app: AppWithInRefsAndInTags) {
     if (data.type === "text" || data.type === "code") {
       const nodeJson = JSON.parse(data.content);
       const pmNode = app.detachedSchema.nodeFromJSON(nodeJson);
-      const refs = getBlockRefs(pmNode, false);
+      const refs = extractBlockRefs(pmNode, false);
       for (const ref of refs) addInRef(app, ref, node.id);
     }
   }
@@ -136,7 +136,7 @@ export function refreshInTags(app: AppWithInRefsAndInTags) {
     if (data.type === "text" || data.type === "code") {
       const nodeJson = JSON.parse(data.content);
       const pmNode = app.detachedSchema.nodeFromJSON(nodeJson);
-      const tags = getBlockRefs(pmNode, true);
+      const tags = extractBlockRefs(pmNode, true);
       for (const tag of tags) addInTag(app, tag, node.id);
     }
   }

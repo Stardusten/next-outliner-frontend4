@@ -51,10 +51,6 @@ export type EditableOutlineViewOptions = {
 
 export type EditableOutlineViewEvents = {
   "root-blocks-changed": { rootBlockIds: BlockId[] };
-  completion: { status: CompletionStatus | null };
-  "completion-next": void;
-  "completion-prev": void;
-  "completion-select": void;
   focus: void;
 };
 
@@ -354,6 +350,11 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       if (selection.scrollIntoView) {
         tr = tr.scrollIntoView();
       }
+      if (selection.highlight && anchor !== null) {
+        setTimeout(() => {
+          highlightEphemeral(this.tiptap!.view, anchor);
+        });
+      }
       this.tiptap.view.focus();
     }
 
@@ -393,6 +394,12 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
 
           if (selection.scrollIntoView) {
             tr = tr.scrollIntoView();
+          }
+
+          if (selection.highlight && anchor !== null) {
+            setTimeout(() => {
+              highlightEphemeral(this.tiptap!.view, anchor);
+            });
           }
 
           this.tiptap.view.dispatch(tr);

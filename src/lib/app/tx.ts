@@ -295,7 +295,6 @@ function execTx(
           const blockNode = app.tree.getNodeByID(blockId);
           if (!blockNode) throw new Error(`要更新的块 ${blockId} 不存在`);
           const oldData = blockNode.data.toJSON() as BlockDataInner;
-          // console.log("patch", op.patch);
           for (const [k, v] of Object.entries(op.patch)) {
             blockNode.data.set(k, v);
           }

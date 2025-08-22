@@ -436,23 +436,19 @@ div.list-item-x.level-15 {
 }
 
 /* 块引用样式 */
-span.block-ref:not(.tag) {
+.block-ref:not(.tag) {
   color: var(--color-block-ref);
   cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--color-block-ref-dash);
-  text-decoration-style: dashed;
-  text-underline-offset: 4px;
-  text-decoration-thickness: 1px;
+  border-bottom: 1px dashed var(--color-block-ref-dash);
 }
 
 /* 块引用和标签被选中时的样式 */
-span.block-ref.selected {
+.block-ref.selected {
   background-color: var(--color-selection) !important;
 }
 
 /* hover 一个块引用时的样式 */
-span.block-ref:not(.tag):hover {
+.block-ref:not(.tag):hover {
   background-color: var(--color-muted);
 }
 
@@ -944,4 +940,37 @@ div.list-item-x.highlighted * {
     calc(23px - 14 * 32px) 0px 0px var(--color-background),
     calc(22px - 14 * 32px) 0px 0px var(--color-guide-line),
     calc(23px - 15 * 32px) 0px 0px var(--color-background);
+}
+
+/* file inline 样式 */
+.file-inline {
+  color: var(--color-block-ref);
+  cursor: pointer;
+  border-bottom: 1px dashed var(--color-block-ref-dash);
+}
+
+/* file-inline 被选中时的样式 */
+.file-inline.selected {
+  background-color: var(--color-selection) !important;
+}
+
+/* hover 一个 file-inline 时的样式 */
+.file-inline:hover {
+  background-color: var(--color-muted);
+}
+
+/* 段落块 */
+.list-item-x.paragraph {
+  /* margin-left: calc(var(--level) * 32px - 48px) !important; */
+  padding: 4px 0 !important;
+  line-height: 24px;
+}
+
+/* 段落块如果没有编号，隐藏 .list-item-left */
+.list-item-x:not(.has-number).paragraph .list-item-left {
+  visibility: hidden;
+}
+
+.list-item-x.paragraph:hover .list-item-left {
+  visibility: visible;
 }

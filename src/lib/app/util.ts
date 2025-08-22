@@ -24,9 +24,10 @@ export function base64ToUint8Array(base64: string): Uint8Array {
 }
 
 /**
- * 从一个块的 ProseMirror 节点中获取所有块引用
+ * 从 ProseMirror Node 中提取所有块引用，ProseMirror Node
+ * 可以是 list item，也可以是 paragraph node，没有限制
  */
-export function getBlockRefs(
+export function extractBlockRefs(
   node: ProseMirrorNode,
   isTag?: boolean
 ): BlockId[] {
@@ -40,10 +41,10 @@ export function getBlockRefs(
       ) {
         const blockId = node.attrs.blockId;
         blockId && res.push(blockId);
-      } else {
-        return false;
+        return true;
       }
     }
+    return false;
   });
   return res;
 }

@@ -97,7 +97,7 @@ function renderTextBlock(
       folded: blockData.folded,
       hasChildren,
       type: "text",
-      number: blockData.number,
+      vo: blockData.vo,
       ...overrideAttrs,
     },
     paragraphNode
@@ -152,7 +152,7 @@ function renderCodeBlock(
       folded: blockData.folded,
       hasChildren,
       type: "code",
-      number: blockData.number,
+      vo: blockData.vo,
       ...overrideAttrs,
     },
     paragraphNode
@@ -221,7 +221,7 @@ function renderSearchBlock(
       folded: blockData.folded,
       hasChildren,
       type: "search",
-      number: blockData.number,
+      vo: blockData.vo,
       ...overrideAttrs,
     },
     searchNodeWithStatus
@@ -261,6 +261,7 @@ function renderTagBlock(
   context: RenderContext,
   options: RenderOptions
 ): Node[] {
+  const result: Node[] = [];
   const blockData = blockNode.data.toJSON() as BlockDataInner;
   const schema = context.getSchema();
 
@@ -272,7 +273,7 @@ function renderTagBlock(
   const children = blockNode.children();
   const hasChildren = children != null && children.length > 0;
 
-  if (hasChildren) throw new Error("tag block should not have children");
+  // if (hasChildren) throw new Error("tag block should not have children");
 
   const json = JSON.parse(blockData.content);
   const listItemType = schema.nodes.listItem!;
@@ -284,12 +285,31 @@ function renderTagBlock(
       folded: blockData.folded,
       hasChildren,
       type: "tag",
-      number: blockData.number,
+      vo: blockData.vo,
       ...overrideAttrs,
     },
     tagNode
   );
-  return [listItemNode];
+  result.push(listItemNode);
+
+  // 指定 options.rootOnly 时，不渲染子节点
+  if (hasChildren && !options.rootOnly) {
+    // 如果块未被折叠，或者指定 expandFoldedRoot 且是根块，则渲染子节点
+    if (!blockData.folded || (options.expandFoldedRoot && level === 0)) {
+      for (const child of children) {
+        const childNodes = renderBlock(
+          child,
+          level + 1,
+          overrideAttrs,
+          context,
+          options
+        );
+        result.push(...childNodes);
+      }
+    }
+  }
+
+  return result;
 }
 
 function renderOutline(

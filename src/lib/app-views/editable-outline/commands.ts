@@ -1,3 +1,8 @@
+import { showToast } from "@/components/ui/toast";
+import { useAttachment } from "@/composables/useAttachment";
+import { useBlockClipboard } from "@/composables/useBlockClipboard";
+import { useDialogs } from "@/composables/useDialogs";
+import { useI18n } from "@/composables/useI18n";
 import type { TagAttrs } from "@/lib/tiptap/nodes/tag";
 import { findCurrListItem, getSelectedListItemInfo } from "@/lib/tiptap/utils";
 import type { Editor as TiptapEditor } from "@tiptap/core";
@@ -10,12 +15,13 @@ import type {
   BlockNode,
   NumberFormat,
   SelectionInfo,
+  ViewOptions,
 } from "../../common/types";
 import { Codeblock } from "../../tiptap/nodes/codeblock";
 import {
   File,
   getDefaultDisplayMode,
-  inferFileTypeFromPath as inferFileTypeFromFilename,
+  inferFileTypeFromFilename as inferFileTypeFromFilename,
 } from "../../tiptap/nodes/file";
 import { ListItem } from "../../tiptap/nodes/list-item";
 import { Search, type SearchAttrs } from "../../tiptap/nodes/search";
@@ -25,11 +31,10 @@ import {
   str2ContentNode,
 } from "../../tiptap/utils";
 import type { AppViewId } from "../types";
-import { useI18n } from "@/composables/useI18n";
-import { showToast } from "@/components/ui/toast";
-import { useBlockClipboard } from "@/composables/useBlockClipboard";
-import { useAttachment } from "@/composables/useAttachment";
-import { useDialogs } from "@/composables/useDialogs";
+
+function inheritVo(vo?: ViewOptions): ViewOptions | undefined {
+  return vo ? { paragraph: vo.paragraph } : undefined;
+}
 
 /**
  * 判断一个 List Item Node 内容是不是空的
@@ -123,6 +128,7 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
 
     const currBlockNode = appview.app.getBlockNode(currBlockId);
     if (!currBlockNode) return false;
+    const currBlockData = currBlockNode.data.toJSON() as BlockDataInner;
 
     const pNode = listItem.firstChild;
     if (!pNode) return false;
@@ -138,6 +144,7 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
           type: "text",
           folded: false,
           content: newContent,
+          vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
         tx.setSelection({
@@ -155,6 +162,7 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
           type: "text",
           folded: false,
           content: newContent,
+          vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
         tx.setSelection({
@@ -276,6 +284,7 @@ export function splitListItemText(editor: TiptapEditor): Command {
 
     const currBlockNode = appview.app.getBlockNode(currBlockId);
     if (!currBlockNode) return false;
+    const currBlockData = currBlockNode.data.toJSON() as BlockDataInner;
 
     const pNode = listItem.firstChild;
     if (!pNode) return false;
@@ -291,6 +300,7 @@ export function splitListItemText(editor: TiptapEditor): Command {
           type: "text",
           folded: false,
           content: newContent,
+          vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
         tx.setSelection({
@@ -312,6 +322,7 @@ export function splitListItemText(editor: TiptapEditor): Command {
           type: "text",
           folded: false,
           content: afterSerialized,
+          vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块开头
         tx.setSelection({
@@ -1748,30 +1759,48 @@ export function numberingChildren(
   };
 }
 
-export function zoomin(editor: TiptapEditor): Command {
+export type ZoomingStackItem = {
+  blockId: BlockId;
+  anchor: number;
+  rootBlockIds: BlockId[];
+};
+
+export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
   return function (state, dispatch) {
+    let tgtId = blockId;
+
     const listItemInfo = findCurrListItem(state);
     if (!listItemInfo) return false;
-    const blockId = listItemInfo.node.attrs.blockId as BlockId;
+    const currBlockId = listItemInfo.node.attrs.blockId as BlockId;
+    if (!currBlockId) return false;
+
+    if (!tgtId) {
+      tgtId = currBlockId;
+    }
 
     const rootBlockIds = editor.appView.getRootBlockIds();
-    if (rootBlockIds.length === 0 && rootBlockIds[0] === blockId) return false;
+    if (rootBlockIds.length === 0 && rootBlockIds[0] === tgtId) return false;
 
     if (!dispatch) return true;
 
     editor.appView.app.withTx((tx) => {
-      editor.appView.setRootBlockIds([blockId]);
-      const children = tx.getChildrenIds(blockId) ?? [];
-      if (children.length > 0) {
-        tx.setSelection({
-          viewId: editor.appView.id,
-          blockId: children[0]!,
-          anchor: 0,
-        });
-        tx.setOrigin("localEditorStructural");
-      } else {
-        tx.abort();
-      }
+      const children = tx.getChildrenIds(tgtId) ?? [];
+      // zoom in 前先保存当前的位置到 zooming 栈中
+      const st = editor.appView.app.zooming.stack;
+      st.push({
+        blockId: currBlockId,
+        anchor: listItemInfo.pos,
+        rootBlockIds,
+      });
+      editor.appView.setRootBlockIds([tgtId]);
+      tx.setSelection({
+        viewId: editor.appView.id,
+        // 如果有孩子，聚焦到第一个孩子开头
+        // 否则聚焦到这个块开头
+        blockId: children[0] ?? tgtId,
+        anchor: 0,
+      });
+      tx.setOrigin("localEditorStructural");
     });
 
     return true;
@@ -1780,29 +1809,156 @@ export function zoomin(editor: TiptapEditor): Command {
 
 export function zoomout(editor: TiptapEditor): Command {
   return function (state, dispatch) {
-    editor.appView.app.withTx((tx) => {
-      const rootBlockIds = editor.appView.getRootBlockIds();
-      if (rootBlockIds.length > 1) {
-        tx.abort();
-        return;
-      }
-
-      const rootBlockId = rootBlockIds[0]!;
-      const parentId = tx.getParentId(rootBlockId);
-      if (parentId != null) {
-        editor.appView.setRootBlockIds([parentId]);
-      } else {
-        editor.appView.setRootBlockIds([]);
-      }
-      if (parentId) {
+    const st = editor.appView.app.zooming.stack;
+    // 如果 zooming 栈中有元素，则弹出栈顶元素
+    // 并且恢复到栈顶元素的位置
+    if (st.length > 0) {
+      const top = st.pop()!;
+      editor.appView.app.withTx((tx) => {
+        editor.appView.setRootBlockIds(top.rootBlockIds);
         tx.setSelection({
           viewId: editor.appView.id,
-          blockId: parentId,
-          anchor: 0,
+          blockId: top.blockId,
+          anchor: top.anchor,
+          scrollIntoView: true,
+          highlight: true,
         });
-      }
-      tx.setOrigin("localEditorStructural");
-    });
+        tx.setOrigin("localEditorStructural");
+      });
+    } else {
+      // 否则，zoom out 的逻辑为设置当前根块的父块作为根块
+      editor.appView.app.withTx((tx) => {
+        const rootBlockIds = editor.appView.getRootBlockIds();
+        if (rootBlockIds.length > 1) {
+          tx.abort();
+          return;
+        }
+
+        const rootBlockId = rootBlockIds[0]!;
+        const parentId = tx.getParentId(rootBlockId);
+        if (parentId != null) {
+          editor.appView.setRootBlockIds([parentId]);
+        } else {
+          editor.appView.setRootBlockIds([]);
+        }
+        if (parentId) {
+          tx.setSelection({
+            viewId: editor.appView.id,
+            blockId: parentId,
+            anchor: 0,
+          });
+        }
+        tx.setOrigin("localEditorStructural");
+      });
+    }
+
+    return true;
+  };
+}
+
+/**
+ * 如果光标在一个块末尾，再按 ArrowRight 应该跳到下一个块开头。
+ * Chrome 默认行为不是这个，这个 command 就是修复这个问题的。
+ */
+export function skipTagEnd(): Command {
+  return function (state, dispatch) {
+    const listItemInfo = findCurrListItem(state);
+    if (!listItemInfo) return false;
+
+    const cNode = listItemInfo.node.firstChild!;
+    const tagType = state.schema.nodes.tag!;
+    if (cNode.type.name !== tagType.name) return false;
+
+    const sel = state.selection;
+    if (sel.empty && sel.$from.parentOffset !== cNode.content.size)
+      return false;
+
+    // +2, 跳出当前 content node 和 list item node
+    // +2，进入下一个 list item node 和 content node
+    const newPos = sel.from + 4;
+    if (dispatch) {
+      const newSel = TextSelection.create(state.doc, newPos);
+      dispatch(state.tr.setSelection(newSel));
+    }
+
+    return true;
+  };
+}
+
+/**
+ * 如果光标在一个块开头，再按 ArrowLeft 应该跳到上一个块末尾。
+ * Chrome 默认行为不是这个，这个 command 就是修复这个问题的。
+ */
+export function skipTagBegin(): Command {
+  return function (state, dispatch) {
+    const listItemInfo = findCurrListItem(state);
+    if (!listItemInfo) return false;
+
+    const cNode = listItemInfo.node.firstChild!;
+    const tagType = state.schema.nodes.tag!;
+    if (cNode.type.name !== tagType.name) return false;
+
+    const sel = state.selection;
+    if (sel.empty && sel.$from.parentOffset !== 0) return false;
+
+    // -2, 跳出当前 content node 和 list item node
+    // -2，进入上一个 list item node 和 content node
+    const newPos = sel.from - 4;
+    if (dispatch) {
+      const newSel = TextSelection.create(state.doc, newPos);
+      dispatch(state.tr.setSelection(newSel));
+    }
+
+    return true;
+  };
+}
+
+export function toggleParagraphBlock(
+  editor: TiptapEditor,
+  blockId?: BlockId,
+  targetState?: boolean
+): Command {
+  return function (state, dispatch) {
+    let tgtId = blockId;
+    if (!tgtId) {
+      const listItemInfo = findCurrListItem(state);
+      if (!listItemInfo) return false;
+      tgtId = listItemInfo.node.attrs.blockId as BlockId;
+      if (!tgtId) return false;
+    }
+
+    if (dispatch) {
+      editor.appView.app.withTx((tx) => {
+        const oldData = tx.getBlockData(tgtId)!;
+        const paragraph =
+          targetState !== undefined ? targetState : !oldData.vo?.paragraph;
+        tx.updateBlock(tgtId, {
+          vo: { ...(oldData.vo ?? {}), paragraph },
+        });
+        tx.setOrigin("localEditorStructural");
+      });
+    }
+
+    return true;
+  };
+}
+
+export function openSelectTagDialog(
+  editor: TiptapEditor,
+  blockId?: BlockId
+): Command {
+  return function (state, dispatch) {
+    let tgtId = blockId;
+    if (!tgtId) {
+      const listItemInfo = findCurrListItem(state);
+      if (!listItemInfo) return false;
+      tgtId = listItemInfo.node.attrs.blockId as BlockId;
+      if (!tgtId) return false;
+    }
+
+    const tagSelector = editor.appView.app.tagSelector;
+    tagSelector.blockId = tgtId;
+    dispatch && tagSelector.openSignal[1](true);
     return true;
   };
 }

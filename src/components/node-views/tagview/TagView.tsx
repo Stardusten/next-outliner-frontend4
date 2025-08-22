@@ -1,11 +1,5 @@
 import { Button, ButtonProps } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { TextField, TextFieldInput } from "@/components/ui/text-field";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -26,8 +20,8 @@ import type {
 import type { Node as ProseNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
 import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";
-import { AlertCircle, Paintbrush, Settings, X } from "lucide-solid";
-import { createMemo, createSignal, For, onMount, Show } from "solid-js";
+import { Settings, X } from "lucide-solid";
+import { createMemo, createSignal, onMount, Show } from "solid-js";
 import { render } from "solid-js/web";
 import ColorSection from "./ColorSection";
 import InheritsSection from "./InheritsSection";
@@ -203,7 +197,7 @@ const TagView = (props: ViewProps) => {
       <div class="flex flex-grow">
         <div class="flex-0-0-auto pr-[4px] tag-content" />
 
-        <div class="flex gap-1 items-center">
+        <div class="flex gap-1 items-center" contentEditable={false}>
           <Tooltip>
             <TooltipTrigger
               as={(p: ButtonProps) => (
@@ -228,6 +222,7 @@ const TagView = (props: ViewProps) => {
             e.preventDefault();
             handleClickPad();
           }}
+          contentEditable={false}
         />
       </div>
 

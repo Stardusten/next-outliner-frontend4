@@ -118,13 +118,72 @@ export const hybridTokenize = (str: string, options: TokenizeOptions = {}) => {
 // l 为 query 中与 target 匹配的字符数
 // 计算匹配字符数规则如下，首先将 query 按 cjk 非 cjk 以及分隔符分为若干 token
 // 然后如果一个 token 在 target 中出现，则匹配字符数加上该 token 的长度
-export const calcMatchScore = (queryTokens: string[], target: string) => {
-  let matchedLength = 0;
+// export const calcMatchScore = (queryTokens: string[], target: string) => {
+//   let matchedLength = 0;
+//   const targetLower = target.toLowerCase();
+//   for (const token of queryTokens) {
+//     if (targetLower.includes(token)) {
+//       matchedLength += token.length;
+//     }
+//   }
+//   return matchedLength / target.length;
+// };
+
+const isUpper = (ch: string): boolean => ch >= "A" && ch <= "Z";
+
+/**
+ * 根据 VS Code 的加分规则，计算 queryTokens 与 target 的模糊匹配分数
+ * @param queryTokens 通过 hybridTokenize 生成的查询令牌数组
+ * @param target 被搜索的目标字符串
+ * @returns 模糊匹配总分数
+ */
+export const calcMatchScore = (
+  queryTokens: string[],
+  target: string
+): number => {
+  let totalScore = 0;
   const targetLower = target.toLowerCase();
+
   for (const token of queryTokens) {
-    if (targetLower.includes(token)) {
-      matchedLength += token.length;
+    const tokenLower = token.toLowerCase();
+    const index = targetLower.indexOf(tokenLower);
+
+    // 如果 token 不在 target 中，则不计分
+    if (index === -1) {
+      continue;
     }
+
+    let score = 0;
+
+    // 1. 基础分：匹配到的 token 长度
+    score += token.length;
+
+    // 2. 开头匹配加分 (VS Code: +8)
+    if (index === 0) {
+      score += 8;
+    }
+    // 3. 单词边界加分 (模拟 VS Code 的分隔符加分)
+    // 检查匹配位置的前一个字符是否是空格或标点
+    else if (SPACE_OR_PUNCTUATION.test(target[index - 1]!)) {
+      score += 5;
+    }
+    // 4. 驼峰命名加分 (VS Code: +2)
+    // 目标字符为大写，且不是开头的匹配
+    else if (isUpper(target[index]!)) {
+      score += 2;
+    }
+
+    // 5. 大小写完全一致加分 (VS Code: +1)
+    if (token === target.slice(index, index + token.length)) {
+      score += 1;
+    }
+
+    // 6. 长度加分（与目标字符串长度成反比，越短越好）
+    // 这个是常见的模糊匹配优化，非 VSCode 独有，但非常实用
+    score += 1 / (target.length + 1);
+
+    totalScore += score;
   }
-  return matchedLength / target.length;
+
+  return totalScore;
 };

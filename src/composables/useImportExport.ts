@@ -6,6 +6,7 @@ import type {
   BlockId,
   BlockNode,
   BlockType,
+  ViewOptions,
 } from "@/lib/common/types";
 import { BLOCKS_TREE_NAME } from "@/lib/persistence/local-storage";
 import { LoroDoc } from "loro-crdt";
@@ -22,7 +23,7 @@ type Block = {
   fractionalIndex: number;
   content: string;
   children: Block[];
-  number?: string;
+  vo?: ViewOptions;
 };
 
 export const EXPORT_FORMATS = ".jsonl,.bsnapshot,.snapshot";
@@ -284,7 +285,7 @@ export function useImportExport(app: App) {
                 type: child.type,
                 folded: child.folded,
                 content: child.content, // 临时内容，之后需要应用 idMapping
-                number: child.number,
+                vo: child.vo,
               });
               old2Tmp[child.id] = newChildId;
               createTree(child, newChildId);
@@ -299,7 +300,7 @@ export function useImportExport(app: App) {
                 type: block.type,
                 folded: block.folded,
                 content: block.content, // 临时内容，之后需要应用 idMapping
-                number: block.number,
+                vo: block.vo,
               });
               old2Tmp[block.id] = rootBlockId;
               createTree(block, rootBlockId);

@@ -1,3 +1,4 @@
+import { EditableOutlineView } from "../app-views/editable-outline/editable-outline";
 import type { AppView, AppViewId } from "../app-views/types";
 import type { AppStep9 } from "./app";
 
@@ -11,6 +12,8 @@ export function initAppViews(app: AppStep9) {
       getLastFocusedAppView(ret, rollback),
     getFocusingAppView: () => getFocusingAppView(ret),
     getAppViewById: (viewId: AppViewId) => getAppViewById(ret, viewId),
+    getLastFocusedBlockId: () => getLastFocusedBlockId(ret),
+    getFocusedBlockId: () => getFocusedBlockId(ret),
   });
   return ret;
 }
@@ -72,4 +75,22 @@ export function getFocusingAppView(app: AppWithAppViews) {
     : null;
   if (!lastFocused) return null;
   return lastFocused.hasFocus() ? lastFocused : null;
+}
+
+export function getLastFocusedBlockId(app: AppWithAppViews) {
+  const view = getLastFocusedAppView(app);
+  if (view instanceof EditableOutlineView) {
+    const [getter] = view.focusedBlockId;
+    return getter();
+  }
+  return null;
+}
+
+export function getFocusedBlockId(app: AppWithAppViews) {
+  const view = getFocusingAppView(app);
+  if (view instanceof EditableOutlineView) {
+    const [getter] = view.focusedBlockId;
+    return getter();
+  }
+  return null;
 }

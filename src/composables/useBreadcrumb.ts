@@ -57,7 +57,10 @@ export const useBreadcrumb = (app: App) => {
       throw new Error("Failed to find mainEditor");
 
     if (blockId) mainEditor.setRootBlockIds([blockId]);
-    else mainEditor.setRootBlockIds([]); // TODO ??
+    else mainEditor.setRootBlockIds([]);
+
+    // 点击面包屑需要清空 zooming 栈
+    app.zooming.stack.length = 0;
   };
 
   return {

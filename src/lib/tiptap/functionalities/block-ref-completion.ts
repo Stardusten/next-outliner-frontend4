@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { type CompletionStatus } from "../../app-views/editable-outline/editable-outline";
 import type { EditorView } from "@tiptap/pm/view";
+import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 
 /**
  * 检查当前状态是否应该显示补全
@@ -89,16 +90,18 @@ export const BlockRefCompletion = Extension.create({
             return status;
           },
           apply(tr, val, _2, newState) {
+            const completion = useBlockRefCompletion(editor.appView.app);
             const status = checkCompletionStatus(newState);
-            editor.appView.eb.emit("completion", { status });
+            completion.handleCompletionEvent(editor.appView, status);
             return status;
           },
         },
         view(view) {
           const handleCompositionEnd = () => {
+            const completion = useBlockRefCompletion(editor.appView.app);
             const status = checkCompletionStatus(view.state);
             if (status) status.fromCompositionEnd = true;
-            editor.appView.eb.emit("completion", { status });
+            completion.handleCompletionEvent(editor.appView, status);
             return status;
           };
           view.dom.addEventListener("compositionend", handleCompositionEnd);
@@ -114,6 +117,7 @@ export const BlockRefCompletion = Extension.create({
         },
         props: {
           handleKeyDown(view, event) {
+            const completion = useBlockRefCompletion(editor.appView.app);
             const state = this.getState(view.state);
 
             // 只在补全激活时处理键盘事件
@@ -122,19 +126,19 @@ export const BlockRefCompletion = Extension.create({
             switch (event.key) {
               case "ArrowDown":
                 event.preventDefault();
-                editor.appView.eb.emit("completion-next");
+                completion.handleCompletionNext();
                 return true;
               case "ArrowUp":
                 event.preventDefault();
-                editor.appView.eb.emit("completion-prev");
+                completion.handleCompletionPrev();
                 return true;
               case "Enter":
                 event.preventDefault();
-                editor.appView.eb.emit("completion-select");
+                completion.handleCompletionSelect(editor.appView);
                 return true;
               case "Escape":
                 event.preventDefault();
-                editor.appView.eb.emit("completion", { status: null });
+                completion.handleCompletionEvent(editor.appView, null);
                 return true;
             }
 

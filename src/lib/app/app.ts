@@ -18,6 +18,7 @@ import { initUndoRedoManager } from "./undo-redo";
 import { initAppViews } from "./views";
 import { useNavigate, useParams } from "@solidjs/router";
 import { initUiStates } from "./ui-states";
+import { initTagsIndex } from "./index/tags";
 
 export type AppEvents = {
   "tx-committed": {
@@ -75,7 +76,8 @@ export function createApp(
   const app11 = initTransactionManager(app10);
   const app12 = initUndoRedoManager(app11);
   const app13 = initUiStates(app12);
-  return app13;
+  const app14 = initTagsIndex(app13);
+  return app14;
 }
 
 export function destroyApp(app: App) {
@@ -95,7 +97,8 @@ export type AppStep10 = ReturnType<typeof initAppViews>;
 export type AppStep11 = ReturnType<typeof initTransactionManager>;
 export type AppStep12 = ReturnType<typeof initUndoRedoManager>;
 export type AppStep13 = ReturnType<typeof initUiStates>;
-export type App = AppStep13;
+export type AppStep14 = ReturnType<typeof initTagsIndex>;
+export type App = AppStep14;
 
 function initEb(app: InitialApp) {
   const eb = mitt<AppEvents>();

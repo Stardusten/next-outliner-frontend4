@@ -1,50 +1,34 @@
-import { createSignal } from "solid-js";
-import type { App } from "@/lib/app/app";
-import type { BlockDataInner, BlockNode } from "@/lib/common/types";
 import {
   EditableOutlineView,
   type CompletionStatus,
-  type EditableOutlineViewEvents,
 } from "@/lib/app-views/editable-outline/editable-outline";
+import type { App } from "@/lib/app/app";
+import { calcMatchScore, hybridTokenize } from "@/lib/app/index/tokenize";
+import { extractBlockRefs } from "@/lib/app/util";
+import type { BlockDataInner, BlockId, BlockNode } from "@/lib/common/types";
 import { executeCompletion } from "@/lib/tiptap/functionalities/block-ref-completion";
 
 export function useBlockRefCompletion(app: App) {
-  const [visible, setCompletionVisible] = createSignal(false);
-  const [query, setCompletionQuery] = createSignal("");
-  const [position, setCompletionPosition] = createSignal({
-    x: 0,
-    y: 0,
-  });
-  const [availableBlocks, setAvailableBlocks] = createSignal<BlockNode[]>([]);
-  const [activeIndex, setCompletionActiveIndex] = createSignal(0);
+  const {
+    visibleSignal,
+    querySignal,
+    positionSignal,
+    availableBlocksSignal,
+    activeIndexSignal,
+  } = app.blockRefCompletion;
+  const [visible, setCompletionVisible] = visibleSignal;
+  const [query, setCompletionQuery] = querySignal;
+  const [position, setCompletionPosition] = positionSignal;
+  const [availableBlocks, setAvailableBlocks] = availableBlocksSignal;
+  const [activeIndex, setCompletionActiveIndex] = activeIndexSignal;
 
   // 防抖加载可用块
   const DEBOUNCE_DELAY = 200; // ms，比搜索稍快一些
-  let debounceTimer: number | undefined;
-
-  function handleCompletionRelatedEvent(
-    editor: EditableOutlineView,
-    key: keyof EditableOutlineViewEvents,
-    event: EditableOutlineViewEvents[keyof EditableOutlineViewEvents]
-  ) {
-    switch (key) {
-      case "completion":
-        handleCompletionEvent(
-          editor,
-          (event as EditableOutlineViewEvents["completion"]).status
-        );
-        break;
-      case "completion-next":
-        handleCompletionNext();
-        break;
-      case "completion-prev":
-        handleCompletionPrev();
-        break;
-      case "completion-select":
-        handleCompletionSelect(editor);
-        break;
-    }
-  }
+  // 使用 app.blockRefCompletion 中的持久化 debounceTimer
+  const getDebounceTimer = () => app.blockRefCompletion.debounceTimer;
+  const setDebounceTimer = (timer: number | undefined) => {
+    app.blockRefCompletion.debounceTimer = timer;
+  };
 
   const handleCompletionEvent = (
     editor: EditableOutlineView,
@@ -58,8 +42,8 @@ export function useBlockRefCompletion(app: App) {
 
       // 如果事件来自 compositionend，直接加载可用块而不使用防抖
       if (status.fromCompositionEnd)
-        immediateLoadAvailableBlocks(editor, status.query);
-      else debouncedLoadAvailableBlocks(editor, status.query);
+        immediateLoadAvailableBlocks(editor, status.query, status);
+      else debouncedLoadAvailableBlocks(editor, status.query, status);
 
       setCompletionActiveIndex(0);
     } else {
@@ -67,9 +51,10 @@ export function useBlockRefCompletion(app: App) {
       setCompletionQuery("");
       setCompletionActiveIndex(0);
       // 清除防抖定时器，避免在关闭后还执行搜索
+      const debounceTimer = getDebounceTimer();
       if (debounceTimer) {
         window.clearTimeout(debounceTimer);
-        debounceTimer = undefined;
+        setDebounceTimer(undefined);
       }
     }
   };
@@ -88,7 +73,38 @@ export function useBlockRefCompletion(app: App) {
     return false;
   };
 
-  const loadAvailableBlocks = (editor: EditableOutlineView, query?: string) => {
+  const calcTagCandidates = (query?: string) => {
+    // 过滤掉当前聚焦的块中已经有的所有 tags
+    let filteredTags: BlockId[] | null = null;
+    const focusedBlockId = app.getFocusedBlockId();
+    if (focusedBlockId) {
+      const data = app.getBlockData(focusedBlockId);
+      const schema = app.detachedSchema;
+      if (data) {
+        const json = JSON.parse(data.content);
+        const pmNode = schema.nodeFromJSON(json);
+        filteredTags = extractBlockRefs(pmNode, true);
+      }
+    }
+
+    if (query && query.trim()) {
+      const filter = filteredTags
+        ? (n: BlockNode) => !filteredTags.includes(n.id)
+        : undefined;
+      const matchedTags = app.searchTags(app, query, filter);
+      setAvailableBlocks(matchedTags);
+    } else {
+      const allTags: BlockNode[] = [];
+      for (const blockId of app.tags[0]().keys()) {
+        if (filteredTags?.includes(blockId)) continue;
+        const blockNode = app.getBlockNode(blockId);
+        if (blockNode) allTags.push(blockNode);
+      }
+      setAvailableBlocks(allTags);
+    }
+  };
+
+  const calcBlockCandidates = (query?: string) => {
     const blocks: BlockNode[] = [];
     if (query && query.trim()) {
       const searchResults = app.searchBlocks(query, 100);
@@ -119,13 +135,12 @@ export function useBlockRefCompletion(app: App) {
     } else {
       let count = 0;
       for (const blockNode of app.getAllNodes()) {
-        if (count >= 10) return false;
+        if (count >= 10) break;
         const textContent = app.getTextContent(blockNode.id);
         if (textContent && textContent.trim().length > 0) {
           blocks.push(blockNode);
           count++;
         }
-        return true;
       }
     }
     setAvailableBlocks(blocks);
@@ -134,44 +149,47 @@ export function useBlockRefCompletion(app: App) {
   // 直接加载可用块（清除计时器并立即加载）
   const immediateLoadAvailableBlocks = (
     editor: EditableOutlineView,
-    query?: string
+    query?: string,
+    status?: CompletionStatus
   ) => {
+    // console.log("immediateLoadAvailableBlocks", query);
     // 清除防抖定时器，避免重复加载
+    const debounceTimer = getDebounceTimer();
     if (debounceTimer) {
       window.clearTimeout(debounceTimer);
-      debounceTimer = undefined;
+      setDebounceTimer(undefined);
     }
-    loadAvailableBlocks(editor, query);
+
+    // 根据触发符号决定调用哪个候选计算函数
+    // 如果是 # 触发或者 isTag 为 true，则调用 calcTagCandidates
+    // 如果是 [[ 或 【【 触发，则调用 calcBlockCandidates
+    if (status?.isTag || status?.trigger === "#") {
+      calcTagCandidates(query);
+    } else {
+      calcBlockCandidates(query);
+    }
   };
 
   // 防抖版本的加载可用块
   const debouncedLoadAvailableBlocks = (
     editor: EditableOutlineView,
-    query?: string
+    query?: string,
+    status?: CompletionStatus
   ) => {
+    // console.log("debouncedLoadAvailableBlocks", query);
+    const debounceTimer = getDebounceTimer();
     if (debounceTimer) window.clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(() => {
-      loadAvailableBlocks(editor, query);
+    const newTimer = window.setTimeout(() => {
+      // 根据触发符号决定调用哪个候选计算函数
+      // 如果是 # 触发或者 isTag 为 true，则调用 calcTagCandidates
+      // 如果是 [[ 或 【【 触发，则调用 calcBlockCandidates
+      if (status?.isTag || status?.trigger === "#") {
+        calcTagCandidates(query);
+      } else {
+        calcBlockCandidates(query);
+      }
     }, DEBOUNCE_DELAY);
-  };
-
-  const handleBlockSelect = (editor: EditableOutlineView, block: BlockNode) => {
-    editor.tiptap && executeCompletion(block.id, editor.tiptap.view);
-    setCompletionVisible(false);
-    // 清除防抖定时器
-    if (debounceTimer) {
-      window.clearTimeout(debounceTimer);
-      debounceTimer = undefined;
-    }
-  };
-
-  const handleCompletionClose = () => {
-    setCompletionVisible(false);
-    // 清除防抖定时器
-    if (debounceTimer) {
-      window.clearTimeout(debounceTimer);
-      debounceTimer = undefined;
-    }
+    setDebounceTimer(newTimer);
   };
 
   const handleCompletionNext = () => {
@@ -188,7 +206,14 @@ export function useBlockRefCompletion(app: App) {
   const handleCompletionSelect = (editor: EditableOutlineView) => {
     const selectedBlock = availableBlocks()[activeIndex()];
     if (selectedBlock) {
-      handleBlockSelect(editor, selectedBlock);
+      editor.tiptap && executeCompletion(selectedBlock.id, editor.tiptap.view);
+      setCompletionVisible(false);
+      // 清除防抖定时器
+      const debounceTimer = getDebounceTimer();
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer);
+        setDebounceTimer(undefined);
+      }
     }
   };
 
@@ -199,8 +224,9 @@ export function useBlockRefCompletion(app: App) {
     position,
     availableBlocks,
     activeIndex,
-    handleBlockSelect,
-    handleCompletionClose,
-    handleCompletionRelatedEvent,
+    handleCompletionEvent,
+    handleCompletionNext,
+    handleCompletionPrev,
+    handleCompletionSelect,
   } as const;
 }

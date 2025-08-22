@@ -25,6 +25,8 @@
     "@aws-sdk/s3-request-presigner": "^3.864.0",
     "@kobalte/core": "^0.13.11",
     "@solid-primitives/i18n": "^2.2.1",
+    "@solid-primitives/map": "^0.7.2",
+    "@solid-primitives/set": "^0.7.2",
     "@solidjs/router": "^0.15.3",
     "@tiptap/core": "^3.2.0",
     "@tiptap/pm": "^3.2.0",

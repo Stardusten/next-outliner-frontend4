@@ -1,5 +1,4 @@
-import { fileInlineViewRenderer } from "@/components/node-views/FileInlineView";
-import { filePreviewViewRenderer } from "@/components/node-views/file-preview/FilePreviewView";
+import { fileViewRenderer } from "@/components/node-views/file/FileView";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 import { App } from "@/lib/app/app";
 import { Node } from "@tiptap/core";
@@ -21,12 +20,7 @@ export const File = Node.create({
     };
   },
   addNodeView() {
-    return (props) => {
-      const mode = props.node.attrs.displayMode as string;
-      if (mode === "inline") return fileInlineViewRenderer(props);
-      if (mode === "preview") return filePreviewViewRenderer(props);
-      return undefined as any;
-    };
+    return fileViewRenderer;
   },
 });
 
@@ -48,8 +42,8 @@ export type FileType =
   | "archive"
   | "unknown";
 
-export function inferFileTypeFromPath(path: string): FileType {
-  const ext = path.toLowerCase().split(".").pop() || "";
+export function inferFileTypeFromFilename(filename: string): FileType {
+  const ext = filename.toLowerCase().split(".").pop() || "";
 
   // 图片类型
   if (

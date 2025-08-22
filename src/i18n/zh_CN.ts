@@ -2,12 +2,17 @@ const zh_CN = {
   common: {
     cancel: "取消",
     delete: "删除",
+    apply: "应用",
     unknownError: "未知错误",
   },
   deleteConfirmDialog: {
     title: "确认删除",
     description:
       "确定要删除知识库配置 “{{title}}” 吗？\n此操作不可恢复，但不会删除实际的数据文件。",
+  },
+  tagSelector: {
+    title: "标签选择器",
+    aiSuggest: "AI 建议",
   },
   importConfirmDialog: {
     title: "导入确认",
@@ -96,6 +101,7 @@ const zh_CN = {
     },
     preview: {
       unsupported: "预览模式暂不支持 {{type}} 文件",
+      loadingImage: "正在加载图片…",
       loadImageFailed: "无法加载图片预览",
       uploading: "上传中 {{progress}}%",
       failed: "上传失败",
@@ -120,7 +126,9 @@ const zh_CN = {
     copyAsHtml: "HTML",
     copiedMarkdownToClipboard: "Markdown 已复制到剪贴板",
     numberingChildren: "给子块编号",
+    toParagraph: "转为段落块",
     pasteAs: "粘贴为...",
+    selectTag: "选择标签",
     pasteAsMarkdownSingleBlock: "Markdown（单个块）",
     pasteAsMarkdownAutoSplit: "Markdown（自动拆分块）",
     pasteAsPureTextSingleBlock: "纯文本（单个块）",

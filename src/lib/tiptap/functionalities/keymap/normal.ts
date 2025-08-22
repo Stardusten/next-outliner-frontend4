@@ -1,8 +1,9 @@
+import { Extension } from "@tiptap/core";
 import { chainCommands, toggleMark } from "@tiptap/pm/commands";
 import { keymap } from "@tiptap/pm/keymap";
 import type { Command, EditorState } from "@tiptap/pm/state";
-import { Extension } from "@tiptap/core";
 import {
+  addFirstChild,
   addToBlockClipboard,
   backspaceAfterCharBeforeExpandedFile,
   codeblockIndent,
@@ -13,8 +14,6 @@ import {
   codeblockSelectAll,
   copyBlockRef,
   deleteBeforeCharBeforeExpandedFile,
-  deleteCharAfter,
-  deleteCharBefore,
   deleteEmptyListItem,
   deleteSelected,
   demoteSelected,
@@ -25,14 +24,15 @@ import {
   promoteSelected,
   redoCommand,
   selectCurrentListItem,
-  splitListItemText,
-  toggleFoldState,
-  convertToSearchBlock,
-  undoCommand,
+  skipTagBegin,
+  skipTagEnd,
   splitListItemSpecial,
+  splitListItemText,
   stopOnListItemBegin,
   stopOnListItemEnd,
-  addFirstChild,
+  toggleFoldState,
+  toggleParagraphBlock,
+  undoCommand,
   zoomin,
   zoomout,
 } from "../../../app-views/editable-outline/commands";
@@ -168,6 +168,13 @@ export const NormalKeymap = Extension.create({
         "Mod-Shift-x": addToBlockClipboard(editor),
         "Mod-Shift-.": zoomin(editor),
         "Mod-Shift-,": zoomout(editor),
+        ArrowRight: dispatchByBlockType({
+          tag: skipTagEnd(),
+        }),
+        ArrowLeft: dispatchByBlockType({
+          tag: skipTagBegin(),
+        }),
+        "Mod-'": toggleParagraphBlock(editor),
       }),
     ];
   },

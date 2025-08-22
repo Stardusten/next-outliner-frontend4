@@ -1,10 +1,11 @@
 import { MenuItem } from "@/composables/useContextMenu";
-import { BlockId, SelectionInfo } from "../common/types";
+import { BlockId, BlockNode, SelectionInfo } from "../common/types";
 import { AppStep12 } from "./app";
 import { createSignal, Signal } from "solid-js";
 import { PendingImport } from "@/composables/useImportExport";
 import { RepoConfig } from "../repo/schema";
 import { SearchResult } from "@/composables/useSearch";
+import { ZoomingStackItem } from "../app-views/editable-outline/commands";
 
 export function initUiStates(app: AppStep12) {
   return Object.assign(app, {
@@ -36,6 +37,21 @@ export function initUiStates(app: AppStep12) {
     settings: {
       visibleSignal: createSignal(false),
       currentPageSignal: createSignal("appearance"),
+    },
+    zooming: {
+      stack: <ZoomingStackItem[]>[],
+    },
+    tagSelector: {
+      openSignal: createSignal(false),
+      blockId: null as BlockId | null,
+    },
+    blockRefCompletion: {
+      visibleSignal: createSignal(false),
+      querySignal: createSignal(""),
+      positionSignal: createSignal<{ x: number; y: number } | null>(null),
+      availableBlocksSignal: createSignal<BlockNode[]>([]),
+      activeIndexSignal: createSignal(0),
+      debounceTimer: undefined as number | undefined,
     },
   });
 }

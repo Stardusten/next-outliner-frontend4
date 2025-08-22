@@ -25,8 +25,8 @@ export const ListItem = Node.create({
       showPath: { default: false },
       // 是否是搜索结果的根节点
       isSearchResultRoot: { default: false },
-      // 块编号
-      number: { default: null },
+      // 视图选项
+      vo: { default: {} },
     };
   },
   parseHTML() {

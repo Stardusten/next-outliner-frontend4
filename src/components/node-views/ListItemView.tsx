@@ -4,22 +4,28 @@ import {
   convertToSearchBlock,
   convertToTagBlock,
   numberingChildren,
+  openSelectTagDialog,
   toggleFoldState,
+  toggleParagraphBlock,
+  zoomin,
 } from "@/lib/app-views/editable-outline/commands";
 import { clipboard } from "@/lib/common/clipboard";
 import { toMarkdown } from "@/lib/common/markdown";
+import { isDescendantOf } from "@/lib/utils";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
 import { Node } from "@tiptap/pm/model";
-import { Decoration, NodeView, ViewMutationRecord } from "@tiptap/pm/view";
+import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";
 import {
   Clipboard,
   Copy,
   CornerDownRight,
   Link,
   ListOrdered,
+  Pilcrow,
   Repeat,
   Scissors,
   SVGAttributes,
+  Tag,
   Text,
   Trash,
 } from "lucide-solid";
@@ -28,7 +34,6 @@ import { render } from "solid-js/web";
 import { Html } from "../icon/Html";
 import { Markdown } from "../icon/Markdown";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { isDescendantOf } from "@/lib/utils";
 
 const Dot = (props: SVGAttributes) => (
   <svg viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -90,7 +95,8 @@ const ListItemView = (props: ListItemViewProps) => {
   const showPath = () => props.node.attrs.showPath === true;
   const showRefCounter = () => props.node.attrs.type === "text";
   const level = () => props.node.attrs.level;
-  const number = () => props.node.attrs.number;
+  const number = () => props.node.attrs.vo?.number;
+  const paragraph = () => props.node.attrs.vo?.paragraph;
   const { t } = useI18n();
 
   const nopr = createMemo(() => {
@@ -137,7 +143,8 @@ const ListItemView = (props: ListItemViewProps) => {
 
   const handleClickBullet = (e: MouseEvent) => {
     const blockId = props.node.attrs.blockId;
-    props.editor.appView.setRootBlockIds([blockId]);
+    const cmd = zoomin(props.editor, blockId);
+    props.editor.appView.execCommand(cmd, true);
   };
 
   const handleRightClickBullet = (e: MouseEvent) => {
@@ -208,15 +215,6 @@ const ListItemView = (props: ListItemViewProps) => {
         ],
       },
       {
-        type: "item",
-        icon: ListOrdered,
-        label: t("blockContextMenu.numberingChildren"),
-        action: () => {
-          const cmd = numberingChildren(editor, "1.", blockId);
-          editor.appView.execCommand(cmd, true);
-        },
-      },
-      {
         type: "submenu",
         icon: Repeat,
         label: t("blockContextMenu.convertTo"),
@@ -240,6 +238,34 @@ const ListItemView = (props: ListItemViewProps) => {
             },
           },
         ],
+      },
+      {
+        type: "item",
+        icon: ListOrdered,
+        label: t("blockContextMenu.numberingChildren"),
+        action: () => {
+          const cmd = numberingChildren(editor, "1.", blockId);
+          editor.appView.execCommand(cmd, true);
+        },
+      },
+      {
+        type: "item",
+        icon: Pilcrow,
+        label: t("blockContextMenu.toParagraph"),
+        action: () => {
+          const cmd = toggleParagraphBlock(editor, blockId);
+          editor.appView.execCommand(cmd, true);
+        },
+      },
+
+      {
+        type: "item",
+        icon: Tag,
+        label: t("blockContextMenu.selectTag"),
+        action: () => {
+          const cmd = openSelectTagDialog(editor, blockId);
+          editor.appView.execCommand(cmd, true);
+        },
       },
       {
         type: "item",
@@ -298,6 +324,7 @@ const ListItemView = (props: ListItemViewProps) => {
         highlighted: props.node.attrs.highlighted,
         "has-number": number() != null,
         nopr: nopr(),
+        paragraph: paragraph(),
       }}
       style={{ "--level": level() }}
       data-block-id={props.node.attrs.blockId}

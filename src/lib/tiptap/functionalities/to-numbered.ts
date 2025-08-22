@@ -28,9 +28,10 @@ export const ToNumbered = Extension.create({
 
             appView.app.withTx((tx) => {
               const blockId = currListItem.node.attrs.blockId as BlockId;
+              const oldData = tx.getBlockData(blockId)!;
               tx.updateBlock(blockId, {
                 content: contentNodeToStr(newPNode),
-                number: match[1],
+                vo: { ...(oldData.vo ?? {}), number: match[1] },
               });
               tx.setSelection({
                 viewId: appView.id,

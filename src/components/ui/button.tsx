@@ -1,4 +1,4 @@
-import type { JSX, ValidComponent } from "solid-js";
+import type { ComponentProps, JSX, ValidComponent } from "solid-js";
 import { splitProps } from "solid-js";
 
 import * as ButtonPrimitive from "@kobalte/core/button";
@@ -48,6 +48,11 @@ type ButtonProps<T extends ValidComponent = "button"> =
     VariantProps<typeof buttonVariants> & {
       class?: string | undefined;
       children?: JSX.Element;
+      /**
+       * Optional inline style attribute.
+       * Accepts SolidJS JSX compatible style formats.
+       */
+      style?: JSX.CSSProperties | string;
     };
 
 const Button = <T extends ValidComponent = "button">(
@@ -70,6 +75,37 @@ const Button = <T extends ValidComponent = "button">(
   );
 };
 
-export { Button, buttonVariants };
+// Add a button variant with a rainbow (seven-color) gradient border.
+// The component keeps the same interior styles as the "outline" variant for
+// maximum compatibility across themes.
+const ColorfulButton = (props: ComponentProps<"button">) => {
+  const [local, rest] = splitProps(props, ["class", "children"]);
+
+  return (
+    <button
+      class={cn(
+        "group relative inline-flex items-center justify-center rounded-md p-[1.5px] text-sm font-medium",
+        "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive outline-none transition-all ",
+        "disabled:pointer-events-none disabled:opacity-50",
+        "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0",
+        local.class
+      )}
+      {...rest}
+    >
+      <span
+        class={cn(
+          "flex h-full w-full items-center justify-center gap-2 rounded-sm bg-background px-3 py-1.5",
+          "transition-colors",
+          "group-hover:bg-accent group-hover:text-accent-foreground"
+        )}
+      >
+        {local.children}
+      </span>
+    </button>
+  );
+};
+
+export { Button, ColorfulButton, buttonVariants };
 export type ButtonVariants = VariantProps<typeof buttonVariants>;
 export type { ButtonProps };
