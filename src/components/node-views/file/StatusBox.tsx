@@ -10,20 +10,21 @@ export const StatusBox = (props: { filename: string; status: FileStatus }) => {
 
   return (
     <div
-      class="inline-block px-5 py-4 my-1 rounded-lg border text-center align-middle"
+      class="inline-block px-2 py-1.5 my-0.5 rounded border text-center align-middle text-xs"
       classList={{
-        "bg-muted border-border text-foreground": isUploading(),
-        "border-destructive/20 text-destructive": isFailed(),
+        "bg-muted border-border text-muted-foreground": isUploading(),
+        "bg-destructive/10 border-destructive/20 text-destructive/70":
+          isFailed(),
       }}
       contentEditable={false}
     >
-      <div class="flex items-center justify-center gap-2">
+      <div class="flex items-center justify-center gap-1.5">
         {isUploading() && (
-          <Loader2 class="inline-block h-5 w-5 animate-spin align-[-2px]" />
+          <Loader2 class="inline-block h-3 w-3 animate-spin align-[-1px]" />
         )}
-        {isFailed() && <XCircle class="inline-block h-5 w-5 align-[-2px]" />}
+        {isFailed() && <XCircle class="inline-block h-3 w-3 align-[-1px]" />}
 
-        <span>
+        <span class="text-xs">
           {props.filename} (
           <Switch>
             <Match when={isUploading()}>

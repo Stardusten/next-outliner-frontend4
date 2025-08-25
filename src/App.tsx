@@ -8,6 +8,7 @@ import "./app.css";
 import { Toaster } from "./components/ui/toast";
 import { ThemeUpdater } from "./components/ThemeUpdater";
 import { SpacingUpdater } from "./components/SpacingUpdater";
+import { CustomCssInjector } from "./components/CustomCssInjector";
 
 const RouterRoot = (props: RouteSectionProps) => {
   return (
@@ -15,6 +16,7 @@ const RouterRoot = (props: RouteSectionProps) => {
       {props.children}
       <ThemeUpdater />
       <SpacingUpdater />
+      <CustomCssInjector />
       <Toaster />
     </>
   );

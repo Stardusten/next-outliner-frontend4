@@ -65,6 +65,9 @@ export const ContextMenuGlobal = (props: { app: App }) => {
                 <Dynamic component={mi.icon!} size={14} />
               </Show>
               <span>{mi.label}</span>
+              <Show when={mi.checked === true}>
+                <span class="ml-auto text-xs">✓</span>
+              </Show>
             </DropdownMenuItem>
           );
       }

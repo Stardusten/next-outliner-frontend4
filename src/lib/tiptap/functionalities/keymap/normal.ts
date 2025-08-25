@@ -21,6 +21,8 @@ import {
   mergeWithPreviousBlock,
   moveBlockDown,
   moveBlockUp,
+  openSelectTagDialog,
+  pasteAllBlocksFromClipboard,
   promoteSelected,
   redoCommand,
   selectCurrentListItem,
@@ -166,6 +168,7 @@ export const NormalKeymap = Extension.create({
         "Mod-z": undoCommand(editor),
         "Mod-Shift-z": redoCommand(editor),
         "Mod-Shift-x": addToBlockClipboard(editor),
+        "Mod-Shift-c": pasteAllBlocksFromClipboard(editor),
         "Mod-Shift-.": zoomin(editor),
         "Mod-Shift-,": zoomout(editor),
         ArrowRight: dispatchByBlockType({
@@ -175,6 +178,26 @@ export const NormalKeymap = Extension.create({
           tag: skipTagBegin(),
         }),
         "Mod-'": toggleParagraphBlock(editor),
+        "Mod-3": openSelectTagDialog(editor),
+        // test only
+        "Mod-e": (state, dispatch) => {
+          const currListItem = findCurrListItem(state);
+          if (currListItem == null) return false;
+          const fileType = state.schema.nodes.file!;
+          const fileNode = fileType.create({
+            path: "images/test.png__tydcytyuhnhjh",
+            displayMode: "preview",
+            filename: "test.png",
+            type: "image",
+            size: 5899,
+            extraInfo: "",
+            status: "uploaded",
+          });
+          const pos = currListItem.pos + currListItem.node.nodeSize - 2;
+          const tr = state.tr.insert(pos, fileNode);
+          dispatch?.(tr);
+          return true;
+        },
       }),
     ];
   },

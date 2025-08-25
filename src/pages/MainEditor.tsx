@@ -1,6 +1,7 @@
 import CompletionPopup from "@/components/CompletionPopup";
 import ContextMenuGlobal from "@/components/ContextMenuGlobal";
 import { DeleteBlockConfirm } from "@/components/DeleteBlockConfirm";
+import { ImageRenameDialog } from "@/components/ImageRenameDialog";
 import { AppHeader } from "@/components/header/AppHeader";
 import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDialog";
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
@@ -97,6 +98,7 @@ export const MainEditor = (props: Props) => {
         <ClearStorageConfirmDialog app={props.app} />
         <SettingsPanel app={props.app} />
         <DeleteBlockConfirm editor={mainEditorView()!} />
+        <ImageRenameDialog app={props.app} />
         <TagSelector app={props.app} />
       </Show>
     </>

@@ -28,6 +28,7 @@ export type SettingType =
   | "input"
   | "number"
   | "font"
+  | "textarea"
   | "custom";
 
 // 选项类型
@@ -105,6 +106,17 @@ export interface FontSetting extends BaseSetting {
   fontList?: string[];
 }
 
+// TextArea 设置项
+export interface TextAreaSetting extends BaseSetting {
+  type: "textarea";
+  defaultValue: string;
+  placeholder?: string;
+  rows?: number;
+  maxLength?: number;
+  readonly?: boolean;
+  code?: boolean; // 是否为代码块，使用等宽字体
+}
+
 // 自定义设置项
 export interface CustomSetting extends BaseSetting {
   type: "custom";
@@ -122,6 +134,7 @@ export type SettingItem =
   | InputSetting
   | NumberSetting
   | FontSetting
+  | TextAreaSetting
   | CustomSetting;
 
 // 设置分组
@@ -193,6 +206,18 @@ const settingsConfig: SettingsPageConfig[] = [
             defaultValue: 100,
             min: 50,
             max: 200,
+          },
+          {
+            id: "customCSS",
+            type: "textarea",
+            label: "自定义 CSS",
+            description: "添加自定义 CSS 样式来个性化界面外观",
+            settingPath: "ui.customCSS",
+            defaultValue: "",
+            placeholder:
+              "/* 在这里输入自定义 CSS */\n.custom-style {\n  color: #333;\n}",
+            rows: 10,
+            code: true,
           },
         ],
       },

@@ -5,6 +5,7 @@ import type { EditableOutlineView } from "../editable-outline";
 import { FullRenderer } from "./full";
 import { RenderOptions } from "./types";
 import { Transaction } from "@tiptap/pm/state";
+import { findBlockPosition } from "@/lib/tiptap/utils";
 
 // 增量渲染器
 export class Patcher {
@@ -56,32 +57,10 @@ function updateView(view: EditableOutlineView, tx: AppEvents["tx-committed"]) {
   }
 }
 
-interface BlockPosition {
-  pos: number;
-  index: number;
-}
-
 interface ParentInfo {
   pos: number;
   index: number;
   level: number;
-}
-
-/**
- * 查找块的位置信息
- */
-function findBlockPosition(
-  content: readonly Node[],
-  blockId: string
-): BlockPosition | null {
-  for (let i = 0, p = 0; i < content.length; i++) {
-    const listItem = content[i]!;
-    if (listItem.attrs.blockId === blockId) {
-      return { pos: p, index: i };
-    }
-    p += listItem.nodeSize;
-  }
-  return null;
 }
 
 /**

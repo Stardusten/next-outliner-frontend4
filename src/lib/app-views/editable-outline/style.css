@@ -659,6 +659,7 @@ div.list-item-x.highlighted * {
   margin-left: calc(-18px);
   padding-bottom: 1.5em;
   font-size: 1.5em;
+  line-height: 1.5em;
 }
 
 /* 根块隐藏折叠按钮和 bullet */
@@ -973,4 +974,29 @@ div.list-item-x.highlighted * {
 
 .list-item-x.paragraph:hover .list-item-left {
   visibility: visible;
+}
+
+/* 图片滤镜 */
+.filter-imageBlend img {
+  mix-blend-mode: screen;
+}
+
+.dark .filter-imageBlendLuminosity img {
+  filter: grayscale(1) contrast(1.5);
+}
+
+.light .filter-imageBlendLuminosity img,
+:not(.dark) .filter-imageBlendLuminosity img {
+  filter: grayscale(1) contrast(1.5) invert(1);
+}
+
+.dark .filter-imageInvert img {
+  filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: screen;
+}
+
+.light .filter-imageInvertW img,
+:not(.dark) .filter-imageInvertW img {
+  filter: invert(1) hue-rotate(180deg);
+  mix-blend-mode: multiply;
 }

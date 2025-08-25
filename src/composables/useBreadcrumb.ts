@@ -48,6 +48,8 @@ export const useBreadcrumb = (app: App) => {
       }
     }
 
+    res.pop();
+
     return res;
   });
 

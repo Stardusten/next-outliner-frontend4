@@ -7,7 +7,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { TextField, TextFieldInput } from "@/components/ui/text-field";
+import {
+  TextField,
+  TextFieldInput,
+  TextFieldTextArea,
+} from "@/components/ui/text-field";
 import {
   Select,
   SelectContent,
@@ -38,6 +42,7 @@ import type {
   InputSetting,
   NumberSetting,
   FontSetting,
+  TextAreaSetting,
   CustomSetting,
   SettingRenderContext,
 } from "@/composables/useSettings";
@@ -233,6 +238,10 @@ const SettingItemView = (props: {
           app={props.renderContext.app}
         />
       );
+    case "textarea":
+      return (
+        <TextAreaComp setting={props.setting} app={props.renderContext.app} />
+      );
     case "custom":
       return (
         <CustomComp
@@ -345,7 +354,7 @@ const TextInputComp = (props: { setting: InputSetting; app: App }) => {
     saveSetting(props.setting.settingPath!, localValue());
   };
   return (
-    <TextField class="w-[320px]">
+    <TextField class="w-[240px]">
       <TextFieldInput
         type={inputType()}
         value={localValue()}
@@ -380,13 +389,51 @@ const NumberInputComp = (props: { setting: NumberSetting; app: App }) => {
     if (!Number.isNaN(n)) saveSetting(props.setting.settingPath!, n);
   };
   return (
-    <TextField class="w-[200px]">
+    <TextField class="w-[240px]">
       <TextFieldInput
         type="number"
         value={localValue()}
         min={props.setting.min}
         max={props.setting.max}
         step={props.setting.step}
+        onInput={onInput}
+        onBlur={onBlur}
+      />
+    </TextField>
+  );
+};
+
+const TextAreaComp = (props: { setting: TextAreaSetting; app: App }) => {
+  const { getSetting, saveSetting } = useSettings(props.app);
+  const current = () =>
+    (getSetting(props.setting.settingPath!) as string | undefined) ??
+    props.setting.defaultValue;
+  const [localValue, setLocalValue] = createSignal<string>(current());
+  createEffect(() => {
+    // 外部值变化（如重置）时同步本地值
+    setLocalValue(current());
+  });
+  const onInput = (e: InputEvent & { currentTarget: HTMLTextAreaElement }) => {
+    setLocalValue(e.currentTarget.value);
+  };
+  const onBlur = () => {
+    saveSetting(props.setting.settingPath!, localValue());
+  };
+  const textAreaClass = () => {
+    const baseClass = "";
+    if (props.setting.code) {
+      return `${baseClass} font-mono`;
+    }
+    return baseClass;
+  };
+  return (
+    <TextField class={textAreaClass()}>
+      <TextFieldTextArea
+        value={localValue()}
+        placeholder={props.setting.placeholder}
+        rows={props.setting.rows || 6}
+        maxLength={props.setting.maxLength}
+        readonly={props.setting.readonly}
         onInput={onInput}
         onBlur={onBlur}
       />
@@ -470,7 +517,10 @@ const FontSelectorComp = (props: { setting: FontSetting; app: App }) => {
   };
   const checkCustom = () => {
     const name = customFont();
-    if (!name) return setIsAvailable(false);
+    if (!name) {
+      setIsAvailable(false);
+      return;
+    }
     setIsAvailable(checkFontAvailability([name])[0]!);
   };
   const addCustomFont = () => {

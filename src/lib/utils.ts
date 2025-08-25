@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function isDescendantOf(elem: Node, className: string) {
-  let curr = elem;
+  let curr = elem as any;
   while (curr != null) {
     if (curr instanceof HTMLElement && curr.classList.contains(className)) {
       return true;
@@ -15,3 +15,9 @@ export function isDescendantOf(elem: Node, className: string) {
   }
   return false;
 }
+
+// platform
+export const mac =
+  typeof navigator != "undefined"
+    ? /Mac|iP(hone|[oa]d)/.test(navigator.platform)
+    : false;

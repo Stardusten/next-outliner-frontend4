@@ -1,4 +1,4 @@
-import { Node as ProseMirrorNode, Schema } from "@tiptap/pm/model";
+import { Node, Node as ProseMirrorNode, Schema } from "@tiptap/pm/model";
 import type { BlockId, BlockType } from "../common/types";
 import { detachedSchema } from "./schema";
 import type { EditorState } from "@tiptap/pm/state";
@@ -158,4 +158,26 @@ export function highlightEphemeral(
   const listItem = findListItemAtPos(view.state.doc, pos);
   if (!listItem) return;
   addHighlightEphemeral(view, listItem.pos, timeout);
+}
+
+interface BlockPosition {
+  pos: number;
+  index: number;
+}
+
+/**
+ * 查找块的位置信息
+ */
+export function findBlockPosition(
+  content: readonly Node[],
+  blockId: string
+): BlockPosition | null {
+  for (let i = 0, p = 0; i < content.length; i++) {
+    const listItem = content[i]!;
+    if (listItem.attrs.blockId === blockId) {
+      return { pos: p, index: i };
+    }
+    p += listItem.nodeSize;
+  }
+  return null;
 }

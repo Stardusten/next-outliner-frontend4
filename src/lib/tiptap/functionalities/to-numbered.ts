@@ -9,7 +9,7 @@ export const ToNumbered = Extension.create({
   name: TO_NUMBERED,
   addProseMirrorPlugins() {
     const re =
-      /^((?:\(|（)?(?:[1-9]|10|[a-j]|[A-J]|I|II|III|IV|V|VI|VII|VIII|IX|X|i|ii|iii|iv|v|vi|vii|viii|ix|x|一|二|三|四|五|六|七|八|九|十)(?:\)|）)?[\.、]?)\s/;
+      /^((?:\(|（)(?:[1-9]|10|[a-j]|[A-J]|I|II|III|IV|V|VI|VII|VIII|IX|X|i|ii|iii|iv|v|vi|vii|viii|ix|x|一|二|三|四|五|六|七|八|九|十)(?:\)|）)|(?:[1-9]|10|[a-j]|[A-J]|I|II|III|IV|V|VI|VII|VIII|IX|X|i|ii|iii|iv|v|vi|vii|viii|ix|x|一|二|三|四|五|六|七|八|九|十)[\.、]|-)\s/;
 
     return [
       inputRules({
@@ -29,9 +29,11 @@ export const ToNumbered = Extension.create({
             appView.app.withTx((tx) => {
               const blockId = currListItem.node.attrs.blockId as BlockId;
               const oldData = tx.getBlockData(blockId)!;
+              // 如果匹配到 "- "，则清空编号，否则设置编号
+              const number = match[1] === "-" ? undefined : match[1];
               tx.updateBlock(blockId, {
                 content: contentNodeToStr(newPNode),
-                vo: { ...(oldData.vo ?? {}), number: match[1] },
+                vo: { ...(oldData.vo ?? {}), number },
               });
               tx.setSelection({
                 viewId: appView.id,

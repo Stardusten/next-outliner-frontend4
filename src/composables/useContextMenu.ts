@@ -14,6 +14,7 @@ interface BaseMenuEntry {
 export interface ActionMenuItem extends BaseMenuEntry {
   type: "item";
   action: () => void;
+  checked?: boolean;
 }
 
 // 分隔线

@@ -16,7 +16,7 @@ export const File = Node.create({
       type: {},
       size: {},
       extraInfo: { default: "" },
-      status: { default: "uploaded" }, // "uploading-{progress}" | "uploaded" | "failed"
+      status: { default: "uploaded" }, // "uploading-{progress}" | "uploaded" | "failed-{errcode}"
     };
   },
   addNodeView() {
@@ -30,8 +30,12 @@ export type FileAttrs = {
   filename: string;
   type: FileType;
   size: number;
-  extraInfo: string;
+  extraInfo: string; // FileExtraInfo
   status: `uploading-${number}` | "uploaded" | `failed-${number}`;
+};
+
+export type FileExtraInfo = {
+  filter?: string;
 };
 
 export type FileType =
@@ -121,7 +125,7 @@ export function parseFileStatus(status: string): FileStatus {
   }
 
   if (status.startsWith("uploading-")) {
-    const progress = parseInt(status.split("-")[1], 10);
+    const progress = parseInt(status.split("-")[1]!, 10);
     return {
       type: "uploading",
       progress: isNaN(progress) ? 0 : Math.min(100, Math.max(0, progress)),
@@ -129,7 +133,7 @@ export function parseFileStatus(status: string): FileStatus {
   }
 
   if (status.startsWith("failed-")) {
-    const errorCode = parseInt(status.split("-")[1], 10);
+    const errorCode = parseInt(status.split("-")[1]!, 10);
     return {
       type: "failed",
       errorCode: isNaN(errorCode) ? 0 : errorCode,
@@ -184,4 +188,44 @@ export function getDefaultDisplayMode(
     default:
       return "inline";
   }
+}
+
+/**
+ * 提取文件名的扩展名（不包含点号）
+ */
+export function getFileExtension(filename: string): string {
+  const lastDotIndex = filename.lastIndexOf(".");
+  if (lastDotIndex === -1 || lastDotIndex === filename.length - 1) {
+    return "";
+  }
+  return filename.substring(lastDotIndex + 1).toLowerCase();
+}
+
+/**
+ * 检查两个文件名的扩展名是否相同
+ */
+export function isExtensionChanged(
+  oldFilename: string,
+  newFilename: string
+): boolean {
+  const oldExt = getFileExtension(oldFilename);
+  const newExt = getFileExtension(newFilename);
+  return oldExt !== newExt;
+}
+
+/**
+ * 下载文件到本地
+ * @param blob 文件数据
+ * @param filename 文件名
+ */
+export function downloadFileToLocal(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

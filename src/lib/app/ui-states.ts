@@ -6,6 +6,7 @@ import { PendingImport } from "@/composables/useImportExport";
 import { RepoConfig } from "../repo/schema";
 import { SearchResult } from "@/composables/useSearch";
 import { ZoomingStackItem } from "../app-views/editable-outline/commands";
+import type { Node } from "@tiptap/pm/model";
 
 export function initUiStates(app: AppStep12) {
   return Object.assign(app, {
@@ -19,6 +20,11 @@ export function initUiStates(app: AppStep12) {
       openSignal: createSignal(false),
       blockId: null as BlockId | null,
       selection: undefined as SelectionInfo | undefined,
+    },
+    imageRename: {
+      openSignal: createSignal(false),
+      currentName: null as string | null,
+      handleRename: null as ((newName: string) => void) | null,
     },
     importExport: {
       importDialogVisibleSignal: createSignal(false),

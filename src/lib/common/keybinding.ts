@@ -1,9 +1,5 @@
 import { base, keyName } from "w3c-keyname";
-
-const mac =
-  typeof navigator != "undefined"
-    ? /Mac|iP(hone|[oa]d)/.test(navigator.platform)
-    : false;
+import { mac } from "../utils";
 
 function normalizeKeyName(name: string) {
   // eslint-disable-next-line prefer-const

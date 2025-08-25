@@ -48,6 +48,7 @@ export const FilePreviewView = (props: FileViewProps) => {
   const showStatusBox = () =>
     status().type === "uploading" || status().type === "failed";
   const showImageBox = () => type() === "image" && status().type === "uploaded";
+  console.log(status(), showStatusBox(), showImageBox());
 
   return (
     <Switch fallback={<Unsupported typeText={fileTypeToText(t, type())} />}>

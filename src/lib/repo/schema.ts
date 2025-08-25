@@ -12,6 +12,7 @@ const uiSchema = z.object({
   fontSize: z.number().min(12).max(24).default(16),
   fontFamily: z.string().default("Inter"),
   scale: z.number().min(50).max(200).default(100),
+  customCSS: z.string().default(""),
 });
 
 // 编辑器设置 schema

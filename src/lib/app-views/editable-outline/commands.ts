@@ -4,9 +4,14 @@ import { useBlockClipboard } from "@/composables/useBlockClipboard";
 import { useDialogs } from "@/composables/useDialogs";
 import { useI18n } from "@/composables/useI18n";
 import type { TagAttrs } from "@/lib/tiptap/nodes/tag";
-import { findCurrListItem, getSelectedListItemInfo } from "@/lib/tiptap/utils";
+import {
+  findBlockPosition,
+  findCurrListItem,
+  findListItemAtPos,
+  getSelectedListItemInfo,
+} from "@/lib/tiptap/utils";
 import type { Editor as TiptapEditor } from "@tiptap/core";
-import { Node, Schema } from "@tiptap/pm/model";
+import { Fragment, Node, Schema } from "@tiptap/pm/model";
 import { NodeSelection, TextSelection, type Command } from "@tiptap/pm/state";
 import type { AttachmentTaskInfo } from "../../app/attachment/storage";
 import type {
@@ -22,6 +27,9 @@ import {
   File,
   getDefaultDisplayMode,
   inferFileTypeFromFilename as inferFileTypeFromFilename,
+  downloadFileToLocal,
+  parseFileStatus,
+  type FileAttrs,
 } from "../../tiptap/nodes/file";
 import { ListItem } from "../../tiptap/nodes/list-item";
 import { Search, type SearchAttrs } from "../../tiptap/nodes/search";
@@ -31,6 +39,7 @@ import {
   str2ContentNode,
 } from "../../tiptap/utils";
 import type { AppViewId } from "../types";
+import { extractBlockRefs } from "@/lib/app/util";
 
 function inheritVo(vo?: ViewOptions): ViewOptions | undefined {
   return vo ? { paragraph: vo.paragraph } : undefined;
@@ -1136,6 +1145,41 @@ export function setImageWidth(pos: number, width: number): Command {
   };
 }
 
+type ImageFilter =
+  | "imageBlend"
+  | "imageBlendLuminosity"
+  | "imageInvert"
+  | "imageInvertW";
+
+export function setImageFilter(
+  pos: number,
+  filter: ImageFilter | undefined
+): Command {
+  return function (state, dispatch) {
+    const node = state.doc.nodeAt(pos);
+    if (!node || node.type.name !== File.name) return false;
+
+    if (dispatch) {
+      const json = node.attrs.extraInfo;
+      let obj;
+      try {
+        obj = JSON.parse(json);
+      } catch (e) {
+        obj = {};
+      }
+      if (filter) obj.filter = filter;
+      else delete obj.filter;
+      const tr = state.tr.setNodeAttribute(
+        pos,
+        "extraInfo",
+        JSON.stringify(obj)
+      );
+      dispatch(tr);
+    }
+    return true;
+  };
+}
+
 export function deleteFile(pos: number): Command {
   return function (state, dispatch) {
     const node = state.doc.nodeAt(pos);
@@ -1146,6 +1190,86 @@ export function deleteFile(pos: number): Command {
       return true;
     }
     return false;
+  };
+}
+
+export function downloadFile(
+  editor: TiptapEditor,
+  fileAttrs: FileAttrs
+): Command {
+  return function (state, dispatch) {
+    const { t } = useI18n();
+    const app = editor.appView.app;
+    const attachmentStorage = app.attachmentStorage;
+
+    if (!attachmentStorage) {
+      showToast({
+        title: t("fileContextMenu.downloadError"),
+        description: t("attachment.storageNotConfigured"),
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // 检查文件状态
+    const fileStatus = parseFileStatus(fileAttrs.status);
+    if (fileStatus.type !== "uploaded") {
+      showToast({
+        title: t("fileContextMenu.downloadError"),
+        description:
+          fileStatus.type === "uploading"
+            ? t("fileContextMenu.fileUploading")
+            : t("fileContextMenu.fileUploadFailed"),
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const filePath = fileAttrs.path;
+    const fileName = fileAttrs.filename;
+
+    if (!filePath) {
+      showToast({
+        title: t("fileContextMenu.downloadError"),
+        description: t("fileContextMenu.filePathNotFound"),
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // 异步执行下载
+    (async () => {
+      try {
+        // 显示下载开始的提示
+        showToast({
+          title: t("fileContextMenu.downloadStarted"),
+          description: fileName,
+        });
+
+        // 执行下载
+        const blob = await attachmentStorage.download(filePath);
+
+        // 下载到本地
+        downloadFileToLocal(blob, fileName);
+
+        // 显示下载成功的提示
+        showToast({
+          title: t("fileContextMenu.downloadSuccess"),
+          description: fileName,
+          variant: "success",
+        });
+      } catch (error) {
+        console.error("Download failed:", error);
+        showToast({
+          title: t("fileContextMenu.downloadError"),
+          description:
+            error instanceof Error ? error.message : t("common.unknownError"),
+          variant: "destructive",
+        });
+      }
+    })();
+
+    return true;
   };
 }
 
@@ -1291,6 +1415,7 @@ export async function uploadFile(
       const [fileNode, filePos]: [Node, number] = found;
       const newAttrs = {
         ...(fileNode.attrs as any),
+        // TODO 目前上传失败错误码都是 1
         status: "failed-1",
       };
 
@@ -1767,37 +1892,49 @@ export type ZoomingStackItem = {
 
 export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
   return function (state, dispatch) {
-    let tgtId = blockId;
+    let listItem = null as { blockId: BlockId; node: Node; pos: number } | null;
 
-    const listItemInfo = findCurrListItem(state);
-    if (!listItemInfo) return false;
-    const currBlockId = listItemInfo.node.attrs.blockId as BlockId;
-    if (!currBlockId) return false;
-
-    if (!tgtId) {
-      tgtId = currBlockId;
+    if (!blockId) {
+      const listItemInfo = findCurrListItem(state);
+      if (!listItemInfo) return false;
+      listItem = {
+        blockId: listItemInfo.node.attrs.blockId as BlockId,
+        node: listItemInfo.node,
+        pos: listItemInfo.pos,
+      };
+    } else {
+      const pos = findBlockPosition(state.doc.content.content, blockId);
+      if (!pos) return false;
+      const node = state.doc.nodeAt(pos.pos);
+      if (!node) return false;
+      listItem = {
+        blockId,
+        node,
+        pos: pos.pos,
+      };
     }
 
     const rootBlockIds = editor.appView.getRootBlockIds();
-    if (rootBlockIds.length === 0 && rootBlockIds[0] === tgtId) return false;
+    if (rootBlockIds.length === 0 && rootBlockIds[0] === listItem.blockId)
+      return false;
 
     if (!dispatch) return true;
 
     editor.appView.app.withTx((tx) => {
-      const children = tx.getChildrenIds(tgtId) ?? [];
+      const children = tx.getChildrenIds(listItem.blockId) ?? [];
       // zoom in 前先保存当前的位置到 zooming 栈中
       const st = editor.appView.app.zooming.stack;
       st.push({
-        blockId: currBlockId,
-        anchor: listItemInfo.pos,
+        blockId: listItem.blockId,
+        anchor: listItem.pos,
         rootBlockIds,
       });
-      editor.appView.setRootBlockIds([tgtId]);
+      editor.appView.setRootBlockIds([listItem.blockId]);
       tx.setSelection({
         viewId: editor.appView.id,
         // 如果有孩子，聚焦到第一个孩子开头
         // 否则聚焦到这个块开头
-        blockId: children[0] ?? tgtId,
+        blockId: children[0] ?? listItem.blockId,
         anchor: 0,
       });
       tx.setOrigin("localEditorStructural");
@@ -1959,6 +2096,91 @@ export function openSelectTagDialog(
     const tagSelector = editor.appView.app.tagSelector;
     tagSelector.blockId = tgtId;
     dispatch && tagSelector.openSignal[1](true);
+    return true;
+  };
+}
+
+/**
+ * 将指定标签添加到当前聚焦的块
+ */
+export function setTagsOfCurrBlock(
+  editor: TiptapEditor,
+  tags: BlockId[],
+  blockId?: BlockId
+): Command {
+  return function (state, dispatch) {
+    const app = editor.appView.app;
+    const schema = editor.schema;
+    const blockRef = schema.nodes.blockRef!;
+
+    let listItem = null as { node: Node; pos: number } | null;
+    if (blockId) {
+      const pos = findBlockPosition(state.doc.content.content, blockId);
+      if (!pos) return false;
+      const node = state.doc.nodeAt(pos.pos);
+      if (!node) return false;
+      listItem = { node, pos: pos.pos };
+    } else {
+      const listItemInfo = findCurrListItem(state);
+      if (!listItemInfo) return false;
+      listItem = listItemInfo;
+    }
+
+    if (!dispatch) return true;
+
+    const cNode = listItem.node.firstChild!;
+
+    // 删除所有现有标签
+    const tempContent: (Node | undefined)[] = [...cNode.content.content];
+    for (let i = 0; i < tempContent.length; i++) {
+      const child = tempContent[i]!;
+      if (child.type.name === blockRef.name && child.attrs.isTag) {
+        const prev = tempContent[i - 1];
+        if (prev?.isText && prev.text!.endsWith(" ")) {
+          const newPrevText = prev.text!.slice(0, -1);
+          const newPrev =
+            newPrevText.length > 0 ? schema.text(newPrevText) : undefined;
+          tempContent[i - 1] = newPrev;
+          tempContent[i] = undefined;
+        }
+      }
+    }
+
+    // 第一个标签前可能需要添加空格
+    if (tags.length > 0) {
+      const lastNode = tempContent[tempContent.length - 1];
+      if (lastNode?.isText && !lastNode.text!.endsWith(" ")) {
+        tempContent.push(schema.text(" "));
+      }
+    }
+
+    // 添加标签节点
+    for (let i = 0; i < tags.length; i++) {
+      const newTag = tags[i]!;
+      const tagNode = blockRef.create({
+        blockId: newTag,
+        isTag: true,
+      });
+      tempContent.push(tagNode);
+      // 最后一个标签后面不加空格
+      if (i < tags.length - 1) tempContent.push(schema.text(" "));
+    }
+    const newContent = Fragment.fromArray(
+      tempContent.filter((c) => c !== undefined)
+    );
+    const newCNode = cNode.copy(newContent);
+
+    const tr = state.tr;
+    const from = listItem.pos + 1;
+    const to = from + cNode.nodeSize;
+    tr.replaceRangeWith(from, to, newCNode);
+
+    // 聚焦到块末尾
+    const newEnd = listItem.pos + 2 + newCNode.content.size;
+    const sel = TextSelection.create(tr.doc, newEnd);
+    tr.setSelection(sel);
+
+    dispatch?.(tr);
     return true;
   };
 }
