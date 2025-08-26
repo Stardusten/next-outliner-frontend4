@@ -28,8 +28,10 @@ export const DeleteBlockConfirm = (props: DeleteConfirmDialogProps) => {
     const { blockId, selection } = deleteBlockConfirm;
     if (!blockId) return;
     const tiptap = props.editor.tiptap!;
-    const cmd = recursiveDeleteBlock(tiptap, blockId, selection);
-    tiptap.appView.execCommand(cmd);
+    if (tiptap.appView instanceof EditableOutlineView) {
+      const cmd = recursiveDeleteBlock(tiptap, blockId, selection);
+      tiptap.appView.execCommand(cmd);
+    }
     setOpen(false);
   };
 

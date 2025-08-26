@@ -588,11 +588,21 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
 
         const newData = contentNodeToStrAndType(listItem.node.firstChild!);
         // console.log(newData);
-        this.app.withTx((tx) => {
-          tx.updateBlock(blockId, newData);
-          tx.setOrigin("localEditorContent" + this.id);
-          beforeSelection && tx.setBeforeSelection(beforeSelection);
-        });
+        
+        // 使用防抖：同一个编辑器内同一个块的连续编辑会被防抖合并
+        this.app.withTx(
+          (tx) => {
+            tx.updateBlock(blockId, newData);
+            tx.setOrigin("localEditorContent" + this.id);
+            beforeSelection && tx.setBeforeSelection(beforeSelection);
+          },
+          {
+            // 按编辑器ID和块ID分组防抖，确保不同块之间不会互相影响
+            debounceKey: `${this.id}-${blockId}`,
+            // 500ms 防抖延迟，用户停止输入 500ms 后才真正执行事务
+            debounceDelay: 500,
+          }
+        );
       }
     }
   }

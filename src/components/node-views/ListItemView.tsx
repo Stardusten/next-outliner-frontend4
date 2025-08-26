@@ -34,6 +34,7 @@ import { render } from "solid-js/web";
 import { Html } from "../icon/Html";
 import { Markdown } from "../icon/Markdown";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 const Dot = (props: SVGAttributes) => (
   <svg viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -137,14 +138,20 @@ const ListItemView = (props: ListItemViewProps) => {
 
   const handleClickFoldBtn = (e: MouseEvent) => {
     const blockId = props.node.attrs.blockId;
-    const cmd = toggleFoldState(props.editor, undefined, blockId);
-    props.editor.appView.execCommand(cmd, true);
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      const cmd = toggleFoldState(props.editor, undefined, blockId);
+      appView.execCommand(cmd, true);
+    }
   };
 
   const handleClickBullet = (e: MouseEvent) => {
     const blockId = props.node.attrs.blockId;
-    const cmd = zoomin(props.editor, blockId);
-    props.editor.appView.execCommand(cmd, true);
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      const cmd = zoomin(props.editor, blockId);
+      appView.execCommand(cmd, true);
+    }
   };
 
   const handleRightClickBullet = (e: MouseEvent) => {
@@ -224,8 +231,11 @@ const ListItemView = (props: ListItemViewProps) => {
             icon: HashTag,
             label: t("blockContextMenu.convertToTag"),
             action: () => {
-              const cmd = convertToTagBlock(editor, blockId);
-              editor.appView.execCommand(cmd, true);
+              const appView = editor.appView;
+              if (appView instanceof EditableOutlineView) {
+                const cmd = convertToTagBlock(editor, blockId);
+                appView.execCommand(cmd, true);
+              }
             },
           },
           {
@@ -233,8 +243,11 @@ const ListItemView = (props: ListItemViewProps) => {
             icon: Search,
             label: t("blockContextMenu.convertToSearch"),
             action: () => {
-              const cmd = convertToSearchBlock(editor, undefined, blockId);
-              editor.appView.execCommand(cmd, true);
+              const appView = editor.appView;
+              if (appView instanceof EditableOutlineView) {
+                const cmd = convertToSearchBlock(editor, undefined, blockId);
+                appView.execCommand(cmd, true);
+              }
             },
           },
         ],
@@ -244,8 +257,11 @@ const ListItemView = (props: ListItemViewProps) => {
         icon: ListOrdered,
         label: t("blockContextMenu.numberingChildren"),
         action: () => {
-          const cmd = numberingChildren(editor, "1.", blockId);
-          editor.appView.execCommand(cmd, true);
+          const appView = editor.appView;
+          if (appView instanceof EditableOutlineView) {
+            const cmd = numberingChildren(editor, "1.", blockId);
+            appView.execCommand(cmd, true);
+          }
         },
       },
       {
@@ -253,8 +269,11 @@ const ListItemView = (props: ListItemViewProps) => {
         icon: Pilcrow,
         label: t("blockContextMenu.toParagraph"),
         action: () => {
-          const cmd = toggleParagraphBlock(editor, blockId);
-          editor.appView.execCommand(cmd, true);
+          const appView = editor.appView;
+          if (appView instanceof EditableOutlineView) {
+            const cmd = toggleParagraphBlock(editor, blockId);
+            appView.execCommand(cmd, true);
+          }
         },
       },
 
@@ -263,8 +282,11 @@ const ListItemView = (props: ListItemViewProps) => {
         icon: Tag,
         label: t("blockContextMenu.selectTag"),
         action: () => {
-          const cmd = openSelectTagDialog(editor, blockId);
-          editor.appView.execCommand(cmd, true);
+          const appView = editor.appView;
+          if (appView instanceof EditableOutlineView) {
+            const cmd = openSelectTagDialog(editor, blockId);
+            appView.execCommand(cmd, true);
+          }
         },
       },
       {

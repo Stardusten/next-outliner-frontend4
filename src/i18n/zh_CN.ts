@@ -90,6 +90,22 @@ const zh_CN = {
     testing: "测试中...",
     testFailed: "测试连接失败",
   },
+  llmTest: {
+    modelName: "模型名称",
+    baseUrl: "服务地址",
+    apiKey: "API Key",
+    fillFirst: "请先填写：",
+    testConnection: "测试连接",
+    testing: "测试中...",
+    testFailed: "测试连接失败",
+    connectionSuccessful: "连接成功，找到 {{count}} 个可用模型",
+    connectionSuccessfulNoModel: "连接成功",
+    invalidApiKey: "API Key 无效或已过期",
+    modelNotFound: "模型未找到",
+    networkError: "网络连接失败，请检查服务地址",
+    rateLimitExceeded: "请求频率超限，请稍后再试",
+    selectProviderFirst: "请先选择模型提供商",
+  },
   file: {
     contextMenu: {
       convertToCard: "转为卡片",

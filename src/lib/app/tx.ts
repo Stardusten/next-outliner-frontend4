@@ -112,7 +112,8 @@ export function initTransactionManager(app: AppStep10) {
   const txQueue = new AsyncTaskQueue();
   const ret = Object.assign(app, {
     txQueue,
-    withTx: (fn: (tx: TxObj) => void) => withTx(ret, fn),
+    withTx: (fn: (tx: TxObj) => void, options?: WithTxOptions) => 
+      withTx(ret, fn, options),
   });
   return ret;
 }
@@ -490,16 +491,44 @@ function getIndexFromTx(
   return idx === -1 ? null : idx;
 }
 
+export interface WithTxOptions {
+  /**
+   * 防抖的 key，相同 key 的事务会被防抖合并
+   * 例如："editorId-blockId"
+   */
+  debounceKey?: string;
+  /**
+   * 防抖延迟时间（毫秒），默认不防抖
+   */
+  debounceDelay?: number;
+}
+
 /**
- * @deprecated
+ * 执行事务
+ * @param app 应用实例
+ * @param fn 事务函数
+ * @param options 可选的防抖配置
  */
-export async function withTx(app: AppWithTx, fn: (tx: TxObj) => void) {
+export async function withTx(
+  app: AppWithTx, 
+  fn: (tx: TxObj) => void,
+  options: WithTxOptions = {}
+) {
+  const { debounceKey, debounceDelay } = options;
   const idMapping: Record<BlockId, BlockId> = {};
-  await app.txQueue.queueTaskAndWait(() => {
-    const txObj = createTxObj(app);
-    fn(txObj);
-    execTx(app, txObj._tx, idMapping);
-  });
+  
+  await app.txQueue.queueTaskAndWait(
+    () => {
+      const txObj = createTxObj(app);
+      fn(txObj);
+      execTx(app, txObj._tx, idMapping);
+    },
+    {
+      key: debounceKey,
+      delay: debounceDelay,
+    }
+  );
+  
   return { idMapping };
 }
 

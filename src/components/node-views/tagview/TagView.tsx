@@ -32,6 +32,7 @@ import {
   parseInheritsInput,
   validateBlockIdsExist,
 } from "./tag-validators";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 type ViewProps = {
   editor: Editor;
@@ -123,9 +124,11 @@ const TagView = (props: ViewProps) => {
   const handleToggleFold = () => {
     const id = blockId();
     if (!id) return;
-    console.log("toggleFold", id);
-    const cmd = toggleFoldState(props.editor, undefined, id);
-    props.editor.appView.execCommand(cmd, true);
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      const cmd = toggleFoldState(props.editor, undefined, id);
+      appView.execCommand(cmd, true);
+    }
   };
 
   const handleClickPad = () => {
@@ -154,8 +157,11 @@ const TagView = (props: ViewProps) => {
       return;
     }
 
+    const appView = props.editor.appView;
+    if (!(appView instanceof EditableOutlineView)) return;
+
     const vres = validateBlockIdsExist(parsed.ids, (bid) =>
-      props.editor.appView.app.getBlockNode(bid)
+      appView.app.getBlockNode(bid)
     );
     if (!vres.ok) {
       const miss = (vres as any).missing;
@@ -169,7 +175,7 @@ const TagView = (props: ViewProps) => {
       fields: fields(),
     };
     const cmd = updateTagBlockAttrs(props.editor, id, patch);
-    props.editor.appView.execCommand(cmd, true);
+    appView.execCommand(cmd, true);
 
     // 重置初始状态
     setInitialState({

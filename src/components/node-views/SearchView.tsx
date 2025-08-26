@@ -27,6 +27,7 @@ import { Pencil, RefreshCcw, Settings } from "lucide-solid";
 import { updateSarchBlockAttrs } from "@/lib/app-views/editable-outline/commands";
 import type { BlockId } from "@/lib/common/types";
 import { isDescendantOf } from "@/lib/utils";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 type ViewProps = {
   editor: Editor;
@@ -156,11 +157,14 @@ const EditSearchQueryPopup = (props: {
   const handleSubmit = () => {
     const blockId = props.getBlockId();
     if (!blockId) return;
-    const cmd = updateSarchBlockAttrs(props.editor, blockId, {
-      query: queryText(),
-    });
-    props.editor.appView.execCommand(cmd, true);
-    setOpen(false);
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      const cmd = updateSarchBlockAttrs(props.editor, blockId, {
+        query: queryText(),
+      });
+      appView.execCommand(cmd, true);
+      setOpen(false);
+    }
   };
 
   return (
@@ -238,9 +242,12 @@ const SearchViewOptionsPopup = (props: {
   const handleToggle = (v: boolean) => {
     const blockId = props.getBlockId();
     if (!blockId) return;
-    const cmd = updateSarchBlockAttrs(props.editor, blockId, { showPath: v });
-    props.editor.appView.execCommand(cmd, true);
-    setShowPath(v);
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      const cmd = updateSarchBlockAttrs(props.editor, blockId, { showPath: v });
+      appView.execCommand(cmd, true);
+      setShowPath(v);
+    }
   };
 
   return (

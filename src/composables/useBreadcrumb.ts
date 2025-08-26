@@ -48,7 +48,7 @@ export const useBreadcrumb = (app: App) => {
       }
     }
 
-    res.pop();
+    if (res.length > 1) res.pop();
 
     return res;
   });

@@ -73,9 +73,6 @@ export const SettingsPanel = (props: { app: App }) => {
     resetSetting,
   }));
 
-  // 不在这里克隆/重建分组，避免导致组件重挂载引起输入框失焦
-  // 仅在渲染时按条件过滤设置项
-
   const onOpenChange = (open: boolean) => {
     if (!open) setVisible(false);
   };
@@ -134,58 +131,60 @@ export const SettingsPanel = (props: { app: App }) => {
 
             <Show when={currentPageConfig() && currentRepo()}>
               <For each={currentPageConfig()!.groups}>
-                {(group) => {
-                  const cfg = currentRepo()!;
-                  const hasVisible = group.settings.some((s) =>
-                    evaluateCondition(s.condition, cfg)
-                  );
-                  return (
-                    <Show when={hasVisible}>
-                      <div class="flex flex-col gap-4">
-                        <h3 class="text-lg font-semibold mb-2">
-                          {group.title}
-                        </h3>
-                        <Show when={group.description}>
-                          <p class="text-sm text-muted-foreground mt-[-.5em] mb-2 whitespace-pre-wrap">
-                            {group.description}
-                          </p>
-                        </Show>
+                {(group) => (
+                  <Show when={(() => {
+                    const cfg = currentRepo();
+                    if (!cfg) return false;
+                    return group.settings.some((s) =>
+                      evaluateCondition(s.condition, cfg)
+                    );
+                  })()}>
+                    <div class="flex flex-col gap-4">
+                      <h3 class="text-lg font-semibold mb-2">
+                        {group.title}
+                      </h3>
+                      <Show when={group.description}>
+                        <p class="text-sm text-muted-foreground mt-[-.5em] mb-2 whitespace-pre-wrap">
+                          {group.description}
+                        </p>
+                      </Show>
 
-                        <For each={group.settings}>
-                          {(setting) => (
-                            <Show
-                              when={evaluateCondition(setting.condition, cfg)}
-                            >
-                              <div class="flex flex-col">
-                                <Show
-                                  when={
-                                    !(
-                                      setting.type === "custom" &&
-                                      (setting as any).noLabel
-                                    )
-                                  }
-                                >
-                                  <Label class="block mb-2">
-                                    {setting.label}
-                                  </Label>
-                                </Show>
-                                <Show when={setting.description}>
-                                  <Label class="block text-[.8em] text-muted-foreground mb-2 whitespace-pre-wrap">
-                                    {setting.description as any}
-                                  </Label>
-                                </Show>
-                                <SettingItemView
-                                  setting={setting}
-                                  renderContext={renderContext()}
-                                />
-                              </div>
-                            </Show>
-                          )}
-                        </For>
-                      </div>
-                    </Show>
-                  );
-                }}
+                      <For each={group.settings}>
+                        {(setting) => (
+                          <Show when={(() => {
+                            const cfg = currentRepo();
+                            if (!cfg) return false;
+                            return evaluateCondition(setting.condition, cfg);
+                          })()}>
+                            <div class="flex flex-col">
+                              <Show
+                                when={
+                                  !(
+                                    setting.type === "custom" &&
+                                    (setting as any).noLabel
+                                  )
+                                }
+                              >
+                                <Label class="block mb-2">
+                                  {setting.label}
+                                </Label>
+                              </Show>
+                              <Show when={setting.description}>
+                                <Label class="block text-[.8em] text-muted-foreground mb-2 whitespace-pre-wrap">
+                                  {setting.description as any}
+                                </Label>
+                              </Show>
+                              <SettingItemView
+                                setting={setting}
+                                renderContext={renderContext()}
+                              />
+                            </div>
+                          </Show>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                )}
               </For>
             </Show>
           </div>

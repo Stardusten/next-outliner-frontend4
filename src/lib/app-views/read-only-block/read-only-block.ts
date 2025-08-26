@@ -37,8 +37,7 @@ export class ReadonlyBlockView implements AppView {
         FastListItem,
       ],
     });
-    // @ts-ignore
-    this.tiptap.appView = this; // TODO bad idea!
+    this.tiptap.appView = this;
 
     // 我们用 fastListItem，使用纯 js 实现，渲染速度快得多
     const fastListItem = this.#toFastListItem(blockNode);

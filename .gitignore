@@ -26,3 +26,11 @@ gitignore
 # System Files
 .DS_Store
 Thumbs.db
+
+# Test Configuration Files (contain sensitive data)
+test.config.json
+test.config.*.json
+
+# Test Coverage
+coverage/
+.nyc_output/

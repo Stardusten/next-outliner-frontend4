@@ -12,6 +12,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { nanoid } from "nanoid";
 import { isEmptyListItem } from "../../app-views/editable-outline/commands";
 import { contentNodeToStrAndType, findCurrListItem } from "../utils";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 // == 常量
 
@@ -210,7 +211,10 @@ export const PasteHtmlOrPlainText = Extension.create({
             event.preventDefault();
             event.stopImmediatePropagation();
 
-            const schema = editor.appView.tiptap?.schema!;
+            const appView = editor.appView;
+            if (!(appView instanceof EditableOutlineView)) return;
+
+            const schema = appView.tiptap?.schema!;
             const currListItem = findCurrListItem(view.state);
             const currBlockId = currListItem?.node.attrs.blockId ?? null;
 
@@ -260,7 +264,7 @@ export const PasteHtmlOrPlainText = Extension.create({
               } else {
                 // 粘贴了多于一个块，则粘贴所有块到当前块下方
                 const idMapping = new Map<string, BlockId>(); // old id -> new id
-                withTx(editor.appView.app, (tx) => {
+                withTx(appView.app, (tx) => {
                   const createTree = (block: Block, newBlockId: BlockId) => {
                     for (let i = 0; i < block.children.length; i++) {
                       const child = block.children[i];
@@ -307,7 +311,7 @@ export const PasteHtmlOrPlainText = Extension.create({
                     const lastRootNode = schema.nodeFromJSON(lastRootJson);
                     schema;
                     tx.setSelection({
-                      viewId: editor.appView.id,
+                      viewId: appView.id,
                       blockId: lastRootId,
                       anchor: lastRootNode.nodeSize,
                       scrollIntoView: true,
@@ -343,7 +347,7 @@ export const PasteHtmlOrPlainText = Extension.create({
                 return true;
               } else {
                 // 粘贴了多行文本
-                withTx(editor.appView.app, (tx) => {
+                withTx(appView.app, (tx) => {
                   let prevBlockId = currBlockId;
                   for (let i = 0; i < lines.length; i++) {
                     const line = lines[i];
@@ -366,7 +370,7 @@ export const PasteHtmlOrPlainText = Extension.create({
                   }
 
                   tx.setSelection({
-                    viewId: editor.appView.id,
+                    viewId: appView.id,
                     blockId: prevBlockId,
                     anchor: 0,
                     scrollIntoView: true,

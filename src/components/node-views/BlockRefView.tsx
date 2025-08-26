@@ -9,6 +9,7 @@ import { createMemo, createSignal, Signal } from "solid-js";
 import { render } from "solid-js/web";
 import { showToast } from "../ui/toast";
 import { Node } from "@tiptap/pm/model";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 type BlockRefViewProps = {
   editor: Editor;
@@ -39,7 +40,9 @@ const BlockRefView = (props: BlockRefViewProps) => {
 
   const handleClick = (e: MouseEvent) => {
     e.preventDefault();
-    props.editor.appView.locateBlock(props.blockId);
+    if (props.editor.appView instanceof EditableOutlineView) {
+      props.editor.appView.locateBlock(props.blockId);
+    }
   };
 
   const handleRightClick = (e: MouseEvent) => {

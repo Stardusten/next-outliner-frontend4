@@ -2,6 +2,7 @@ import { Extension } from "@tiptap/core";
 import { InputRule, inputRules } from "@tiptap/pm/inputrules";
 import { contentNodeToStr, findCurrListItem } from "../utils";
 import { BlockId } from "@/lib/common/types";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 const TO_NUMBERED = "to-numbered";
 
@@ -16,6 +17,8 @@ export const ToNumbered = Extension.create({
         rules: [
           new InputRule(re, (state, match) => {
             const appView = this.editor.appView;
+            if (!(appView instanceof EditableOutlineView)) return null;
+
             const currListItem = findCurrListItem(state);
             if (currListItem == null) return null;
 

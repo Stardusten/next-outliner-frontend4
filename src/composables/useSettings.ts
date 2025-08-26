@@ -9,6 +9,7 @@ import type {
 } from "@/lib/repo/schema";
 import { Brain, Database, Info, PaintRoller, Settings } from "lucide-solid";
 import TestOssConnection from "@/components/settings/TestOssConnection";
+import TestLLMConnection from "@/components/settings/TestLLMConnection";
 import RepoInfo from "@/components/settings/RepoInfo";
 import { useCurrRepoConfig } from "./useCurrRepoConfig";
 import { App } from "@/lib/app/app";
@@ -520,7 +521,8 @@ const settingsConfig: SettingsPageConfig[] = [
             label: "测试连接",
             settingPath: null,
             noLabel: true,
-            render: () => null,
+            render: (context) =>
+              (TestLLMConnection as any)({ context }) as JSX.Element,
           },
         ],
       },

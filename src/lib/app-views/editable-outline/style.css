@@ -29,6 +29,7 @@ div.list-item-x {
   padding: 2px;
   display: flex;
   outline: none;
+  position: relative;
 }
 
 /* 如果显示路径，上方添加 padding 留出路径需要的空间 */

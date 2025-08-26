@@ -9,7 +9,14 @@ import { cn } from "@/lib/utils";
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const Tooltip: Component<TooltipPrimitive.TooltipRootProps> = (props) => {
-  return <TooltipPrimitive.Root openDelay={100} gutter={4} {...props} />;
+  return (
+    <TooltipPrimitive.Root
+      openDelay={100}
+      gutter={4}
+      triggerOnFocusOnly={false}
+      {...props}
+    />
+  );
 };
 
 type TooltipContentProps<T extends ValidComponent = "div"> =

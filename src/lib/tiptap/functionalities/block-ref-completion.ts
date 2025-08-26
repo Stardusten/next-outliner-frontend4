@@ -1,6 +1,9 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
-import { type CompletionStatus, EditableOutlineView } from "../../app-views/editable-outline/editable-outline";
+import {
+  type CompletionStatus,
+  EditableOutlineView,
+} from "../../app-views/editable-outline/editable-outline";
 import type { EditorView } from "@tiptap/pm/view";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 
@@ -86,23 +89,30 @@ export const BlockRefCompletion = Extension.create({
         state: {
           init(_, state) {
             const status = checkCompletionStatus(state);
-            // editor.appView.eb.emit("completion", { status });
             return status;
           },
           apply(tr, val, _2, newState) {
-            const completion = useBlockRefCompletion(editor.appView.app);
-            const status = checkCompletionStatus(newState);
-            completion.handleCompletionEvent(editor.appView, status);
-            return status;
+            const appView = editor.appView;
+            if (appView instanceof EditableOutlineView) {
+              const completion = useBlockRefCompletion(editor.appView.app);
+              const status = checkCompletionStatus(newState);
+              completion.handleCompletionEvent(appView, status);
+              return status;
+            }
+            return null;
           },
         },
         view(view) {
           const handleCompositionEnd = () => {
-            const completion = useBlockRefCompletion(editor.appView.app);
-            const status = checkCompletionStatus(view.state);
-            if (status) status.fromCompositionEnd = true;
-            completion.handleCompletionEvent(editor.appView, status);
-            return status;
+            const appView = editor.appView;
+            if (appView instanceof EditableOutlineView) {
+              const completion = useBlockRefCompletion(appView.app);
+              const status = checkCompletionStatus(view.state);
+              if (status) status.fromCompositionEnd = true;
+              completion.handleCompletionEvent(appView, status);
+              return status;
+            }
+            return null;
           };
           view.dom.addEventListener("compositionend", handleCompositionEnd);
 
@@ -134,11 +144,13 @@ export const BlockRefCompletion = Extension.create({
                 return true;
               case "Enter":
                 event.preventDefault();
-                completion.handleCompletionSelect(editor.appView);
+                if (editor.appView instanceof EditableOutlineView)
+                  completion.handleCompletionSelect(editor.appView);
                 return true;
               case "Escape":
                 event.preventDefault();
-                completion.handleCompletionEvent(editor.appView, null);
+                if (editor.appView instanceof EditableOutlineView)
+                  completion.handleCompletionEvent(editor.appView, null);
                 return true;
             }
 

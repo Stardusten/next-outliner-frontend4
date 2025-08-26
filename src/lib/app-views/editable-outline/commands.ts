@@ -40,6 +40,7 @@ import {
 } from "../../tiptap/utils";
 import type { AppViewId } from "../types";
 import { extractBlockRefs } from "@/lib/app/util";
+import { EditableOutlineView } from "./editable-outline";
 
 function inheritVo(vo?: ViewOptions): ViewOptions | undefined {
   return vo ? { paragraph: vo.paragraph } : undefined;
@@ -99,7 +100,7 @@ export function demoteSelected(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
     appview.app.withTx((tx) => {
-      if (!appview.tiptap) return;
+      if (!(appview instanceof EditableOutlineView)) return;
       const { start, end, cross } = getSelectedListItemInfo(state);
       if (!start || !end || cross) return;
 
@@ -233,6 +234,7 @@ export function addFirstChild(
 ): Command {
   return function (state, dispatch) {
     const { appView: appview, schema } = editor;
+    if (!(appview instanceof EditableOutlineView)) return false;
 
     const { $from } = state.selection;
     const currListItem = findCurrListItem(state);
@@ -657,8 +659,9 @@ export function moveBlockDown(editor: TiptapEditor): Command {
 export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
-    const { $from, empty } = state.selection;
+    if (!(appview instanceof EditableOutlineView)) return false;
 
+    const { $from, empty } = state.selection;
     // 只在光标位于块开头且没有选中内容时触发
     if (!empty || $from.parentOffset !== 0) return false;
 
@@ -1093,6 +1096,8 @@ export function codeblockMoveToLineEnd(): Command {
 export function undoCommand(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
+    if (!(appview instanceof EditableOutlineView)) return false;
+
     const canUndoRes = appview.canUndo();
     if (dispatch && canUndoRes) {
       // 异步执行撤销，不阻塞命令返回
@@ -1105,6 +1110,8 @@ export function undoCommand(editor: TiptapEditor): Command {
 export function redoCommand(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
+    if (!(appview instanceof EditableOutlineView)) return false;
+
     const canRedoRes = appview.canRedo();
     if (dispatch && canRedoRes) {
       // 异步执行重做，不阻塞命令返回
@@ -1898,6 +1905,9 @@ export type ZoomingStackItem = {
 
 export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
   return function (state, dispatch) {
+    const appView = editor.appView;
+    if (!(appView instanceof EditableOutlineView)) return false;
+
     let listItem = null as { blockId: BlockId; node: Node; pos: number } | null;
 
     if (!blockId) {
@@ -1920,7 +1930,7 @@ export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
       };
     }
 
-    const rootBlockIds = editor.appView.getRootBlockIds();
+    const rootBlockIds = appView.getRootBlockIds();
     if (rootBlockIds.length === 0 && rootBlockIds[0] === listItem.blockId)
       return false;
 
@@ -1935,7 +1945,7 @@ export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
         anchor: listItem.pos,
         rootBlockIds,
       });
-      editor.appView.setRootBlockIds([listItem.blockId]);
+      appView.setRootBlockIds([listItem.blockId]);
       tx.setSelection({
         viewId: editor.appView.id,
         // 如果有孩子，聚焦到第一个孩子开头
@@ -1952,13 +1962,16 @@ export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
 
 export function zoomout(editor: TiptapEditor): Command {
   return function (state, dispatch) {
+    const appView = editor.appView;
+    if (!(appView instanceof EditableOutlineView)) return false;
+
     const st = editor.appView.app.zooming.stack;
     // 如果 zooming 栈中有元素，则弹出栈顶元素
     // 并且恢复到栈顶元素的位置
     if (st.length > 0) {
       const top = st.pop()!;
-      editor.appView.app.withTx((tx) => {
-        editor.appView.setRootBlockIds(top.rootBlockIds);
+      appView.app.withTx((tx) => {
+        appView.setRootBlockIds(top.rootBlockIds);
         tx.setSelection({
           viewId: editor.appView.id,
           blockId: top.blockId,
@@ -1971,7 +1984,7 @@ export function zoomout(editor: TiptapEditor): Command {
     } else {
       // 否则，zoom out 的逻辑为设置当前根块的父块作为根块
       editor.appView.app.withTx((tx) => {
-        const rootBlockIds = editor.appView.getRootBlockIds();
+        const rootBlockIds = appView.getRootBlockIds();
         if (rootBlockIds.length > 1) {
           tx.abort();
           return;
@@ -1980,9 +1993,9 @@ export function zoomout(editor: TiptapEditor): Command {
         const rootBlockId = rootBlockIds[0]!;
         const parentId = tx.getParentId(rootBlockId);
         if (parentId != null) {
-          editor.appView.setRootBlockIds([parentId]);
+          appView.setRootBlockIds([parentId]);
         } else {
-          editor.appView.setRootBlockIds([]);
+          appView.setRootBlockIds([]);
         }
         if (parentId) {
           tx.setSelection({

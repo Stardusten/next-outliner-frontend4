@@ -583,7 +583,7 @@ showToastPromise(
 
 **API 接口**:
 ```typescript
-Tooltip { openDelay?, gutter?, ...otherProps }
+Tooltip { openDelay?, gutter?, triggerOnFocusOnly?, ...otherProps }
 TooltipTrigger { as?, children? }
 TooltipContent { class?, side? }
 ```
@@ -591,6 +591,7 @@ TooltipContent { class?, side? }
 **与 shadcn/ui 的差异**:
 - ✅ 默认 `openDelay: 100ms`
 - ✅ 默认 `gutter: 4px`
+- ✅ 默认 `triggerOnFocusOnly: false` - 只响应 hover，不响应焦点
 - ⚠️ 必须使用 `as` prop 传递触发器
 
 **实际使用示例**:
@@ -767,6 +768,56 @@ const [open, setOpen] = createSignal(false);
     <SwitchThumb />
   </SwitchControl>
 </Switch>
+```
+
+### 5. Dialog 关闭后焦点管理问题
+```tsx
+// ❌ Dialog 关闭后 Tooltip 意外显示
+// 问题：Dialog 默认会将焦点恢复到 DialogTrigger，
+// 如果 DialogTrigger 被 Tooltip 包裹，会触发 Tooltip 显示
+<Dialog open={open()} onOpenChange={setOpen}>
+  <DialogTrigger>
+    <Tooltip>
+      <TooltipTrigger>
+        <Button>Open Search</Button>
+      </TooltipTrigger>
+      <TooltipContent>Search tooltip</TooltipContent>
+    </Tooltip>
+  </DialogTrigger>
+</Dialog>
+
+// ✅ 解决方案 1: 设置 Tooltip 不响应焦点
+<Dialog open={open()} onOpenChange={setOpen}>
+  <DialogTrigger>
+    <Tooltip triggerOnFocusOnly={false}>  {/* 关键：只响应 hover */}
+      <TooltipTrigger>
+        <Button>Open Search</Button>
+      </TooltipTrigger>
+      <TooltipContent>Search tooltip</TooltipContent>
+    </Tooltip>
+  </DialogTrigger>
+</Dialog>
+
+// ✅ 解决方案 2: 使用 onCloseAutoFocus 阻止焦点恢复
+<Dialog open={open()} onOpenChange={setOpen}>
+  <DialogTrigger>
+    <Tooltip>
+      <TooltipTrigger>
+        <Button ref={buttonRef}>Open Search</Button>
+      </TooltipTrigger>
+      <TooltipContent>Search tooltip</TooltipContent>
+    </Tooltip>
+  </DialogTrigger>
+  <DialogContent 
+    onCloseAutoFocus={(e) => {
+      e.preventDefault();
+      buttonRef?.blur?.();
+      // 然后将焦点转移到其他地方
+    }}
+  >
+    {/* Dialog 内容 */}
+  </DialogContent>
+</Dialog>
 ```
 
 ---
