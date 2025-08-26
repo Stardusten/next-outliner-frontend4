@@ -105,7 +105,7 @@ export const CompletionPopup: Component<Props> = (props) => {
         <For each={completion.availableBlocks()}>
           {(block, index) => (
             <div
-              ref={(el) => setItemRef(el as unknown as HTMLElement, index())}
+              ref={(el) => setItemRef(el!, index())}
               class="relative flex w-full cursor-default select-none items-center px-3 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground border-b border-border last:border-b-0"
               classList={{
                 "bg-accent text-accent-foreground":

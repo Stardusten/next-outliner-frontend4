@@ -113,7 +113,7 @@ export function useBlockRefCompletion(app: App) {
       if (!(focusedEditor instanceof EditableOutlineView))
         throw new Error("Focused editor is not a TiptapEditorView");
       const focusedBlockId = focusedEditor
-        ? focusedEditor.getFocusedBlockId()
+        ? focusedEditor.getLastFocusedBlockId()
         : null;
 
       for (const blockId of searchResults) {

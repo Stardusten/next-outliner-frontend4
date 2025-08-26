@@ -1,21 +1,16 @@
 import { Button, ButtonProps } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useContextMenu } from "@/composables/useContextMenu";
 import { useI18n } from "@/composables/useI18n";
 import { App } from "@/lib/app/app";
 import { AttachmentStorage } from "@/lib/app/attachment/storage";
 import { FileAttrs } from "@/lib/tiptap/nodes/file";
 import { Node } from "@tiptap/pm/model";
-import { MoreHorizontal, Repeat, Trash2 } from "lucide-solid";
+import { MoreHorizontal, Trash2 } from "lucide-solid";
 import {
   batch,
   createEffect,
@@ -26,6 +21,7 @@ import {
   Switch,
   Match,
 } from "solid-js";
+import { createFileMenuItems } from "./fileMenuUtils";
 
 // image path -> image url
 const imageCache = new Map<string, string>();
@@ -243,6 +239,8 @@ export const ImageView = (props: {
 export type ImageEmbeddedPreviewProps = {
   node: Node;
   app: App;
+  editor: any;
+  getPos: () => number;
   convertToInline: () => void;
   convertToCard: () => void;
   deleteImage: () => void;
@@ -252,7 +250,6 @@ export type ImageEmbeddedPreviewProps = {
 export const ImageEmbeddedPreview = (props: ImageEmbeddedPreviewProps) => {
   const { t } = useI18n();
   const [showToolbar, setShowToolbar] = createSignal(false);
-  const [dropdownOpen, setDropdownOpen] = createSignal(false);
   const [imageStatus, setImageStatus] =
     createSignal<ImageLoadStatus>("loading");
   const width = createMemo(() => getImageWidthFromNode(props.node));
@@ -261,26 +258,44 @@ export const ImageEmbeddedPreview = (props: ImageEmbeddedPreviewProps) => {
   const extraInfos = createMemo(() => {
     const { extraInfo } = props.node.attrs as FileAttrs;
     try {
-      return JSON.parse(extraInfo);
+      return JSON.parse(extraInfo || "{}");
     } catch (_e) {
       return {};
     }
   });
 
+  // 获取当前图片滤镜
+  const currentFilter = createMemo(() => {
+    return extraInfos().filter;
+  });
+
+  const filename = () => (props.node.attrs as FileAttrs).filename;
+
   const handleLoadStatusChange = (status: ImageLoadStatus) => {
     setImageStatus(status);
   };
 
-  // 工具栏显示逻辑
-  let timer: number;
-  createEffect(() => {
-    if (dropdownOpen()) {
-      clearTimeout(timer);
-      setShowToolbar(true);
-    } else {
-      timer = setTimeout(() => setShowToolbar(false), 500);
-    }
-  });
+  // 处理菜单点击
+  const handleMenuClick = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const { open } = useContextMenu(props.app);
+
+    const menuItems = createFileMenuItems({
+      editor: props.editor,
+      node: props.node,
+      getPos: props.getPos,
+      showConvertToPreview: false, // 已经是 preview 模式
+      showDelete: false, // 删除按钮单独显示
+    });
+
+    // 使用按钮作为锚点
+    const button = e.target as HTMLElement;
+    open(button, menuItems);
+  };
+
+  // 工具栏显示逻辑（简化版）
+  // 现在使用悬停来控制工具栏显示
 
   return (
     <ResizableBox
@@ -301,41 +316,24 @@ export const ImageEmbeddedPreview = (props: ImageEmbeddedPreviewProps) => {
 
       {/* 图片工具栏 - 只在加载成功时显示 */}
       <Show when={imageStatus() === "loaded"}>
-        <div
-          class="absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity z-20"
-          classList={{
-            "opacity-100": showToolbar(),
-            "group-hover:opacity-100": true,
-          }}
-        >
+        <div class="absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity z-20 group-hover:opacity-100">
           {/* 命令列表 */}
-          <DropdownMenu onOpenChange={setDropdownOpen}>
-            <DropdownMenuTrigger
+          <Tooltip>
+            <TooltipTrigger
               as={(p: ButtonProps) => (
-                <Tooltip>
-                  <TooltipTrigger
-                    as={(p: ButtonProps) => (
-                      <Button variant="outline" size="xs-icon" {...p}>
-                        <MoreHorizontal class="w-[14px] h-[14px]" />
-                      </Button>
-                    )}
-                    {...p}
-                  />
-                  <TooltipContent>{t("file.preview.imageMenu")}</TooltipContent>
-                </Tooltip>
+                <Button
+                  variant="outline"
+                  size="xs-icon"
+                  class="bg-background/95 border-border/70 shadow-md hover:bg-background hover:border-border"
+                  {...p}
+                  onClick={handleMenuClick}
+                >
+                  <MoreHorizontal class="w-[14px] h-[14px]" />
+                </Button>
               )}
             />
-            <DropdownMenuContent>
-              <DropdownMenuItem onSelect={props.convertToInline}>
-                <Repeat class="size-[14px]" />
-                {t("file.contextMenu.convertToInline")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={props.convertToCard}>
-                <Repeat class="size-[14px]" />
-                {t("file.contextMenu.convertToCard")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <TooltipContent>{t("file.preview.imageMenu")}</TooltipContent>
+          </Tooltip>
 
           {/* 删除按钮 */}
           <Tooltip>
@@ -345,6 +343,7 @@ export const ImageEmbeddedPreview = (props: ImageEmbeddedPreviewProps) => {
                   {...p}
                   variant="destructiveOutline"
                   size="xs-icon"
+                  class="bg-background/95 border-destructive/70 shadow-md hover:bg-destructive/10 hover:border-destructive"
                   onClick={props.deleteImage}
                 >
                   <Trash2 class="w-[14px] h-[14px]" />

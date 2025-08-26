@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { batch, createSignal } from "solid-js";
 import type { App } from "@/lib/app/app";
 import type { BlockNode } from "@/lib/common/types";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
@@ -18,8 +18,10 @@ export function useSearch(app: App) {
 
   const performSearch = (query: string) => {
     if (!query.trim()) {
-      setSearchResults([]);
-      setActiveIndex(0);
+      batch(() => {
+        setSearchResults([]);
+        setActiveIndex(0);
+      });
       return;
     }
 
@@ -36,8 +38,10 @@ export function useSearch(app: App) {
       }
     }
 
-    setSearchResults(results);
-    setActiveIndex(0);
+    batch(() => {
+      setSearchResults(results);
+      setActiveIndex(0);
+    });
   };
 
   // 防抖执行搜索
@@ -51,8 +55,10 @@ export function useSearch(app: App) {
   };
 
   const setQuery = (query: string) => {
-    setSearchQuery(query);
-    debouncedSearch(query);
+    batch(() => {
+      setSearchQuery(query);
+      debouncedSearch(query);
+    });
   };
 
   const setActiveIndexSafe = (index: number) => {
@@ -94,9 +100,11 @@ export function useSearch(app: App) {
   };
 
   const resetSearch = () => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setActiveIndex(0);
+    batch(() => {
+      setSearchQuery("");
+      setSearchResults([]);
+      setActiveIndex(0);
+    });
   };
 
   const openSearch = () => {
@@ -104,8 +112,11 @@ export function useSearch(app: App) {
   };
 
   const closeSearch = () => {
-    setSearchVisible(false);
-    resetSearch();
+    batch(() => {
+      setSearchVisible(false);
+      resetSearch();
+    });
+    setTimeout(() => app.refocus());
   };
 
   return {
@@ -128,5 +139,3 @@ export function useSearch(app: App) {
     selectCurrentItem,
   };
 }
-
-export type UseSearchReturn = ReturnType<typeof useSearch>;

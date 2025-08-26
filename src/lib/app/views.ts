@@ -14,6 +14,7 @@ export function initAppViews(app: AppStep9) {
     getAppViewById: (viewId: AppViewId) => getAppViewById(ret, viewId),
     getLastFocusedBlockId: () => getLastFocusedBlockId(ret),
     getFocusedBlockId: () => getFocusedBlockId(ret),
+    refocus: () => refocus(ret),
   });
   return ret;
 }
@@ -80,7 +81,7 @@ export function getFocusingAppView(app: AppWithAppViews) {
 export function getLastFocusedBlockId(app: AppWithAppViews) {
   const view = getLastFocusedAppView(app);
   if (view instanceof EditableOutlineView) {
-    const [getter] = view.focusedBlockId;
+    const [getter] = view.lastFocusedBlockId;
     return getter();
   }
   return null;
@@ -89,8 +90,15 @@ export function getLastFocusedBlockId(app: AppWithAppViews) {
 export function getFocusedBlockId(app: AppWithAppViews) {
   const view = getFocusingAppView(app);
   if (view instanceof EditableOutlineView) {
-    const [getter] = view.focusedBlockId;
+    const [getter] = view.lastFocusedBlockId;
     return getter();
   }
   return null;
+}
+
+export function refocus(app: AppWithAppViews) {
+  const view = getLastFocusedAppView(app);
+  if (view instanceof EditableOutlineView) {
+    view.tiptap?.view.focus();
+  }
 }

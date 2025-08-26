@@ -48,7 +48,7 @@ export function useBlockClipboard(app: App) {
       showToast({ title: t("clipboardPopup.noAppFocused") });
       return;
     }
-    const focused = appView.getFocusedBlockId();
+    const focused = appView.getLastFocusedBlockId();
     if (!focused) {
       showToast({ title: t("clipboardPopup.noAppFocused") });
       return;

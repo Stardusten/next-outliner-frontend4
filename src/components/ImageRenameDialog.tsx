@@ -66,12 +66,21 @@ export const ImageRenameDialog = (props: ImageRenameDialogProps) => {
       setNewName(currentName);
       setIsAwaitingExtensionConfirm(false);
 
-      // 全选
+      // 只选中文件名部分，不包括扩展名
       setTimeout(() => {
         const input = document.querySelector("input[autofocus]");
         if (input instanceof HTMLInputElement) {
           input.focus();
-          input.select();
+
+          // 找到最后一个点的位置
+          const lastDotIndex = currentName.lastIndexOf(".");
+          if (lastDotIndex > 0) {
+            // 选中从开始到最后一个点之前的部分
+            input.setSelectionRange(0, lastDotIndex);
+          } else {
+            // 如果没有扩展名，选中全部
+            input.select();
+          }
         }
       });
     } else {

@@ -17,6 +17,7 @@ import {
 } from "../ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useI18n } from "@/composables/useI18n";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 type CodeBlockViewProps = {
   editor: Editor;
@@ -26,7 +27,13 @@ type CodeBlockViewProps = {
 
 const CodeBlockView = (props: CodeBlockViewProps) => {
   const [lang, setLang] = createSignal<string>("");
-  const [focusedId] = props.editor.appView.focusedBlockId;
+  const lastFocusedId = () => {
+    const appView = props.editor.appView;
+    if (appView instanceof EditableOutlineView) {
+      return appView.getLastFocusedBlockId();
+    }
+    return null;
+  };
   const { t } = useI18n();
 
   const blockId = createMemo(() => {
@@ -41,7 +48,8 @@ const CodeBlockView = (props: CodeBlockViewProps) => {
   });
 
   const handleLangUpdate = (lang_: any) => {
-    if (!blockId()) return;
+    if (!blockId() || !(props.editor.appView instanceof EditableOutlineView))
+      return;
     const cmd = updateCodeblockLang(props.editor, blockId(), lang_);
     props.editor.appView.execCommand(cmd, true);
     setLang(lang_);
@@ -52,7 +60,7 @@ const CodeBlockView = (props: CodeBlockViewProps) => {
       <code class="codeblock-content" spellcheck={false}></code>
 
       {/* 工具栏，仅当代码块被聚焦时显示 */}
-      <Show when={focusedId() === blockId()}>
+      <Show when={lastFocusedId() === blockId()}>
         <div class="absolute right-0 -top-10 flex items-center gap-1">
           {/* 语言选择器 */}
           <Select

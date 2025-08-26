@@ -6,6 +6,7 @@ import { createRoot, createSignal, Match, Signal, Switch } from "solid-js";
 import { render } from "solid-js/web";
 import { FilePreviewView } from "./FilePreviewView";
 import { FileInlineView } from "./FileInlineView";
+import { FileCardView } from "./FileCardView";
 
 export type FileViewProps = {
   editor: Editor;
@@ -46,6 +47,9 @@ const FileView = (props: FileViewProps) => {
       </Match>
       <Match when={props.node.attrs.displayMode === "inline"}>
         <FileInlineView {...props} />
+      </Match>
+      <Match when={props.node.attrs.displayMode === "expanded"}>
+        <FileCardView {...props} />
       </Match>
     </Switch>
   );

@@ -1,32 +1,24 @@
-import { App } from "@/lib/app/app";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "./ui/dialog";
-import {
-  createEffect,
-  createSignal,
-  For,
-  onMount,
-  onCleanup,
-  createMemo,
-} from "solid-js";
-import { Button, ButtonProps, ColorfulButton } from "./ui/button";
-import { CircleQuestionMark, WandSparkles } from "lucide-solid";
-import { BlockId } from "@/lib/common/types";
-import { ReactiveSet } from "@solid-primitives/set";
 import { useI18n } from "@/composables/useI18n";
 import { setTagsOfCurrBlock } from "@/lib/app-views/editable-outline/commands";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
+import { App } from "@/lib/app/app";
 import { extractBlockRefs } from "@/lib/app/util";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { mac } from "@/lib/utils";
 import { createSimpleKeydownHandler } from "@/lib/common/keybinding";
+import { BlockId } from "@/lib/common/types";
+import { mac } from "@/lib/utils";
+import { ReactiveSet } from "@solid-primitives/set";
+import { WandSparkles } from "lucide-solid";
+import { createEffect, createMemo, createSignal, For } from "solid-js";
+import { Button, ColorfulButton } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export const TagSelector = (props: { app: App }) => {
   const { t } = useI18n();
@@ -66,17 +58,14 @@ export const TagSelector = (props: { app: App }) => {
     setOpen(false);
 
     // 添加完标签后恢复焦点
-    setTimeout(() => editor.view.focus());
+    setTimeout(() => props.app.refocus());
   };
 
   const handleCancel = () => {
     setOpen(false);
 
     // 关闭后恢复焦点
-    const view = props.app.getLastFocusedAppView();
-    if (view instanceof EditableOutlineView) {
-      setTimeout(() => view.tiptap?.view.focus());
-    }
+    props.app.refocus();
   };
 
   const handleAiSuggest = () => {

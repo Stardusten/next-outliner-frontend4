@@ -35,22 +35,17 @@ export const ContextMenuGlobal = (props: { app: App }) => {
         case "submenu":
           return (
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger
-                disabled={!!mi.disabled}
-                class="flex gap-2"
-              >
+              <DropdownMenuSubTrigger disabled={!!mi.disabled}>
                 <Show when={!!mi.icon}>
                   <Dynamic component={mi.icon!} size={14} />
                 </Show>
                 <span>{mi.label}</span>
               </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent class="min-w-[150px] mx-1">
-                  <For each={mi.children}>
-                    {(child) => <ContextMenuItemRenderer item={child} />}
-                  </For>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
+              <DropdownMenuSubContent class="min-w-[150px] mx-1">
+                <For each={mi.children}>
+                  {(child) => <ContextMenuItemRenderer item={child} />}
+                </For>
+              </DropdownMenuSubContent>
             </DropdownMenuSub>
           );
         case "item":

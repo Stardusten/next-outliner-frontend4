@@ -35,6 +35,7 @@ export function SearchPopup(props: Props) {
 
   let inputRef: HTMLInputElement | undefined;
   let listRef: HTMLDivElement | undefined;
+  let buttonRef: HTMLButtonElement | undefined;
   const [itemRefs, setItemRefs] = createSignal<Record<number, HTMLElement>>({});
 
   const setItemRef = (el: HTMLElement | undefined, index: number) => {
@@ -89,6 +90,16 @@ export function SearchPopup(props: Props) {
     setQuery(value);
   };
 
+  // 搜索浮窗关闭时，原本会聚焦到 trigger
+  // 这里阻止默认行为，并手动 blur trigger
+  // 然后 closeSearch 应该会重新聚焦 appView
+  const handleCloseAutoFocus = (e: Event) => {
+    e.preventDefault();
+    if (buttonRef instanceof HTMLButtonElement) {
+      buttonRef.blur();
+    }
+  };
+
   createEffect(on(activeIndex, scrollToActiveItem));
 
   createEffect(() => {
@@ -112,15 +123,15 @@ export function SearchPopup(props: Props) {
       onOpenChange={(o) => (o ? openSearch() : closeSearch())}
     >
       <DialogTrigger
-        as={(p: ButtonProps) => (
+        as={(p1: ButtonProps) => (
           <Tooltip>
             <TooltipTrigger
-              as={(p) => (
-                <Button variant="ghost" size="xs-icon" {...p}>
+              as={(p2: ButtonProps) => (
+                <Button variant="ghost" size="xs-icon" {...p2} ref={buttonRef}>
                   <Search />
                 </Button>
               )}
-              {...p}
+              {...p1}
             />
             <TooltipContent>{t("search.tooltip")}</TooltipContent>
           </Tooltip>
@@ -130,7 +141,7 @@ export function SearchPopup(props: Props) {
       <DialogContent
         class="max-w-[500px] max-h-[500px] p-0 gap-0 [&>button]:hidden"
         transparentOverlay
-        onCloseAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={handleCloseAutoFocus}
       >
         <DialogTitle class="hidden" />
 

@@ -27,7 +27,7 @@ import { RenderOptions } from "./renderers/types";
 
 declare module "@tiptap/core" {
   interface Editor {
-    appView: EditableOutlineView;
+    appView: AppView<any>;
   }
 }
 
@@ -86,7 +86,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   deferredContentSyncTask: (() => void) | null;
 
   repoConfig: Accessor<RepoConfig | null>;
-  focusedBlockId: Signal<BlockId | null>;
+  lastFocusedBlockId: Signal<BlockId | null>;
   rootBlockIds: Signal<BlockId[]>;
 
   // 渲染器
@@ -110,7 +110,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     this.off = this.eb.off;
     this.deferredContentSyncTask = null;
     this.repoConfig = useCurrRepoConfig(app);
-    this.focusedBlockId = createSignal<BlockId | null>(null);
+    this.lastFocusedBlockId = createSignal<BlockId | null>(null);
 
     this.renderOptions = {
       rootOnly: false,
@@ -203,11 +203,14 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     };
   }
 
-  getFocusedBlockId(): BlockId | null {
-    if (!this.tiptap) throw new Error("Editor not mounted");
-    const state = this.tiptap.state;
-    const listItemInfo = findCurrListItem(state);
-    return listItemInfo?.node.attrs.blockId ?? null;
+  getLastFocusedBlockId(): BlockId | null {
+    const [getter] = this.lastFocusedBlockId;
+    return getter();
+  }
+
+  getFocusingBlockId(): BlockId | null {
+    if (!this.tiptap?.isFocused) return null;
+    return this.getLastFocusedBlockId();
   }
 
   setRootBlockIds(rootBlockIds: BlockId[]): void {

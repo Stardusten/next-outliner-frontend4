@@ -168,7 +168,6 @@ export const NormalKeymap = Extension.create({
         "Mod-z": undoCommand(editor),
         "Mod-Shift-z": redoCommand(editor),
         "Mod-Shift-x": addToBlockClipboard(editor),
-        "Mod-Shift-c": pasteAllBlocksFromClipboard(editor),
         "Mod-Shift-.": zoomin(editor),
         "Mod-Shift-,": zoomout(editor),
         ArrowRight: dispatchByBlockType({

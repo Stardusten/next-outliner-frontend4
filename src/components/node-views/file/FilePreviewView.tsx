@@ -11,6 +11,7 @@ import { fileTypeToText, FileViewProps } from "./FileView";
 import { ImageEmbeddedPreview } from "./ImageBox";
 import { StatusBox } from "./StatusBox";
 import { Unsupported } from "./Unsupported";
+import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 export const FilePreviewView = (props: FileViewProps) => {
   const { t } = useI18n();
@@ -22,33 +23,40 @@ export const FilePreviewView = (props: FileViewProps) => {
   });
 
   const handleConvertToInline = () => {
-    const pos = props.getPos();
-    const cmd = changeFileDisplayMode(pos, "inline");
-    props.editor.appView.execCommand(cmd, true);
+    if (props.editor.appView instanceof EditableOutlineView) {
+      const pos = props.getPos();
+      const cmd = changeFileDisplayMode(pos, "inline");
+      props.editor.appView.execCommand(cmd, true);
+    }
   };
 
   const handleConvertToCard = () => {
-    const pos = props.getPos();
-    const cmd = changeFileDisplayMode(pos, "expanded");
-    props.editor.appView.execCommand(cmd, true);
+    if (props.editor.appView instanceof EditableOutlineView) {
+      const pos = props.getPos();
+      const cmd = changeFileDisplayMode(pos, "expanded");
+      props.editor.appView.execCommand(cmd, true);
+    }
   };
 
   const handleDelete = () => {
-    const pos = props.getPos();
-    const cmd = deleteFile(pos);
-    props.editor.appView.execCommand(cmd, true);
+    if (props.editor.appView instanceof EditableOutlineView) {
+      const pos = props.getPos();
+      const cmd = deleteFile(pos);
+      props.editor.appView.execCommand(cmd, true);
+    }
   };
 
   const handleImageResize = (newWidth: number) => {
-    const pos = props.getPos();
-    const cmd = setImageWidth(pos, newWidth);
-    props.editor.appView.execCommand(cmd, true);
+    if (props.editor.appView instanceof EditableOutlineView) {
+      const pos = props.getPos();
+      const cmd = setImageWidth(pos, newWidth);
+      props.editor.appView.execCommand(cmd, true);
+    }
   };
 
   const showStatusBox = () =>
     status().type === "uploading" || status().type === "failed";
   const showImageBox = () => type() === "image" && status().type === "uploaded";
-  console.log(status(), showStatusBox(), showImageBox());
 
   return (
     <Switch fallback={<Unsupported typeText={fileTypeToText(t, type())} />}>
@@ -59,6 +67,8 @@ export const FilePreviewView = (props: FileViewProps) => {
         <ImageEmbeddedPreview
           app={props.editor.appView.app}
           node={props.node}
+          editor={props.editor}
+          getPos={props.getPos}
           convertToInline={handleConvertToInline}
           convertToCard={handleConvertToCard}
           deleteImage={handleDelete}

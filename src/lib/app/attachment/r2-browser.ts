@@ -58,7 +58,7 @@ function buildObjectName(originalName: string): string {
 function parseObjectName(objectName: string) {
   const [encoded, ts, id] = objectName.split(SEP);
   return {
-    filename: decodeFilename(encoded),
+    filename: decodeFilename(encoded!),
     timestamp: ts ? Number(ts) : undefined,
     id,
   } as const;

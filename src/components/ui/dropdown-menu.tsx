@@ -131,6 +131,7 @@ const DropdownMenuSubTrigger = <T extends ValidComponent = "div">(
     <DropdownMenuPrimitive.SubTrigger
       class={cn(
         "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent",
+        "flex gap-2",
         props.class
       )}
       {...rest}
@@ -162,14 +163,16 @@ const DropdownMenuSubContent = <T extends ValidComponent = "div">(
 ) => {
   const [, rest] = splitProps(props as DropdownMenuSubContentProps, ["class"]);
   return (
-    <DropdownMenuPrimitive.SubContent
-      class={cn(
-        // 与 Content 保持一致的进入/退出动画：fade + zoom + slide（按 placement）
-        "bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2 z-50 min-w-32 origin-[var(--kb-menu-content-transform-origin)] overflow-hidden rounded-md border p-1 shadow-md",
-        props.class
-      )}
-      {...rest}
-    />
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.SubContent
+        class={cn(
+          // 与 Content 保持一致的进入/退出动画：fade + zoom + slide（按 placement）
+          "bg-popover text-popover-foreground data-[expanded]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[expanded]:fade-in-0 data-[closed]:zoom-out-95 data-[expanded]:zoom-in-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2 z-50 min-w-32 origin-[var(--kb-menu-content-transform-origin)] overflow-hidden rounded-md border p-1 shadow-md",
+          props.class
+        )}
+        {...rest}
+      />
+    </DropdownMenuPrimitive.Portal>
   );
 };
 

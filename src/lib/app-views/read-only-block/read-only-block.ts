@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { FastListItem } from "../../tiptap/nodes/fast-list-item";
 import { HighlightMatches } from "../../tiptap/functionalities/highlight-matches";
 import type { AppView, AppViewId } from "../types";
+import { HighlightCodeblock } from "@/lib/tiptap/functionalities/highlight-codeblock";
 
 export class ReadonlyBlockView implements AppView {
   id: AppViewId;
@@ -29,7 +30,12 @@ export class ReadonlyBlockView implements AppView {
     this.tiptap = new TiptapEditor({
       element: el,
       editable: false,
-      extensions: [...schemaExts, HighlightMatches, FastListItem],
+      extensions: [
+        ...schemaExts,
+        HighlightMatches,
+        HighlightCodeblock,
+        FastListItem,
+      ],
     });
     // @ts-ignore
     this.tiptap.appView = this; // TODO bad idea!

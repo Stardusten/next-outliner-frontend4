@@ -1,35 +1,23 @@
 import { useContextMenu } from "@/composables/useContextMenu";
-import { useDialogs } from "@/composables/useDialogs";
 import { useI18n } from "@/composables/useI18n";
-import {
-  changeFileDisplayMode,
-  downloadFile,
-  setImageFilter,
-} from "@/lib/app-views/editable-outline/commands";
 import {
   inferFileTypeFromFilename,
   parseFileStatus,
-  type FileAttrs,
   type FileStatus,
 } from "@/lib/tiptap/nodes/file";
-import { TextSelection } from "@tiptap/pm/state";
 import {
-  Download,
-  Edit3,
   FileArchive,
   FileText,
-  Filter,
   Image,
-  Info,
   Loader2,
   Music,
-  Repeat,
   Video,
   XCircle,
 } from "lucide-solid";
 import { createMemo, Match, Switch } from "solid-js";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { FileViewProps } from "./FileView";
+import { createFileMenuItems } from "./fileMenuUtils";
 import { ImageFloatingPreview } from "./ImageBox";
 
 // 前缀图标组件 - 显示状态或文件类型图标
@@ -120,141 +108,17 @@ export const FileInlineView = (props: FileViewProps) => {
   const filetype = () => inferFileTypeFromFilename(filename());
   const st = () => statusParsed();
 
-  // 获取当前图片滤镜
-  const currentFilter = createMemo(() => {
-    const { extraInfo } = props.node.attrs as FileAttrs;
-    try {
-      const parsed = JSON.parse(extraInfo || "{}");
-      return parsed.filter;
-    } catch (_e) {
-      return undefined;
-    }
-  });
-
   const handleRightClick = (e: MouseEvent) => {
     e.preventDefault();
     const { open } = useContextMenu(props.editor.appView.app);
-    const { openImageRename } = useDialogs(props.editor.appView.app);
 
-    const menuItems = [
-      {
-        type: "item" as const,
-        label: t("fileContextMenu.download"),
-        icon: Download,
-        action: () => {
-          const cmd = downloadFile(props.editor, props.node.attrs as FileAttrs);
-          props.editor.appView.execCommand(cmd, true);
-        },
-      },
-      {
-        type: "item" as const,
-        label: t("fileContextMenu.rename"),
-        icon: Edit3,
-        action: () => {
-          const handleRename = (newName: string) => {
-            const { editor, node, getPos } = props;
-            const pos = getPos();
-            let tr = editor.state.tr.setNodeAttribute(pos, "filename", newName);
-            const sel = TextSelection.create(tr.doc, pos + 1);
-            tr = tr.setSelection(sel);
-            editor.view.dispatch(tr);
-            // 延迟聚焦
-            setTimeout(() => editor.view.focus());
-          };
-          openImageRename(filename(), handleRename);
-        },
-      },
-      // 图片滤镜选项，只在图片文件时显示
-      ...(filetype() === "image"
-        ? [
-            {
-              type: "submenu" as const,
-              label: t("fileContextMenu.imageFilter"),
-              icon: Filter,
-              children: [
-                {
-                  type: "item" as const,
-                  label: t("imageFilters.none"),
-                  action: () => {
-                    const pos = props.getPos();
-                    const cmd = setImageFilter(pos, undefined);
-                    props.editor.appView.execCommand(cmd, true);
-                  },
-                  checked: currentFilter() === undefined,
-                },
-                {
-                  type: "item" as const,
-                  label: t("imageFilters.imageBlend"),
-                  action: () => {
-                    const pos = props.getPos();
-                    const cmd = setImageFilter(pos, "imageBlend");
-                    props.editor.appView.execCommand(cmd, true);
-                  },
-                  checked: currentFilter() === "imageBlend",
-                },
-                {
-                  type: "item" as const,
-                  label: t("imageFilters.imageBlendLuminosity"),
-                  action: () => {
-                    const pos = props.getPos();
-                    const cmd = setImageFilter(pos, "imageBlendLuminosity");
-                    props.editor.appView.execCommand(cmd, true);
-                  },
-                  checked: currentFilter() === "imageBlendLuminosity",
-                },
-                {
-                  type: "item" as const,
-                  label: t("imageFilters.imageInvert"),
-                  action: () => {
-                    const pos = props.getPos();
-                    const cmd = setImageFilter(pos, "imageInvert");
-                    props.editor.appView.execCommand(cmd, true);
-                  },
-                  checked: currentFilter() === "imageInvert",
-                },
-                {
-                  type: "item" as const,
-                  label: t("imageFilters.imageInvertW"),
-                  action: () => {
-                    const pos = props.getPos();
-                    const cmd = setImageFilter(pos, "imageInvertW");
-                    props.editor.appView.execCommand(cmd, true);
-                  },
-                  checked: currentFilter() === "imageInvertW",
-                },
-              ],
-            },
-          ]
-        : []),
-      {
-        type: "item" as const,
-        label: t("fileContextMenu.convertToPreview"),
-        icon: Repeat,
-        action: () => {
-          const pos = props.getPos();
-          const cmd = changeFileDisplayMode(pos, "preview");
-          props.editor.appView.execCommand(cmd, true);
-        },
-      },
-      {
-        type: "item" as const,
-        label: t("fileContextMenu.convertToCard"),
-        icon: Repeat,
-        action: () => {
-          const pos = props.getPos();
-          const cmd = changeFileDisplayMode(pos, "expanded");
-          props.editor.appView.execCommand(cmd, true);
-        },
-      },
-      {
-        type: "item" as const,
-        label: t("fileContextMenu.details"),
-        icon: Info,
-        action: () => {
-          // TODO: 实现详情功能
-        },
-      },
-    ];
+    const menuItems = createFileMenuItems({
+      editor: props.editor,
+      node: props.node,
+      getPos: props.getPos,
+      showConvertToInline: false, // 已经是 inline 模式
+      showDelete: false, // inline 模式不显示删除按钮
+    });
 
     open(e, menuItems);
   };
@@ -275,8 +139,8 @@ export const FileInlineView = (props: FileViewProps) => {
               }}
               data-filename={filename()}
               contentEditable={false}
-              oncontextmenu={handleRightClick}
               {...p}
+              onContextMenu={handleRightClick}
             >
               <FileIconPrefix status={st()} filetype={filetype()} />
               <FileName filename={filename()} />
