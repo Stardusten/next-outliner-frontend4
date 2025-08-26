@@ -1,5 +1,6 @@
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { EditableOutlineView } from "../../app-views/editable-outline/editable-outline";
 
 const COMPOSITION_FIX_PLUGIN = "compositionFix";
 
@@ -14,7 +15,9 @@ export const CompositionFix = Extension.create({
         props: {
           handleDOMEvents: {
             compositionend: (e) => {
-              editor.appView.deferredContentSyncTask?.();
+              if (editor.appView instanceof EditableOutlineView) {
+                editor.appView.deferredContentSyncTask?.();
+              }
             },
           },
         },

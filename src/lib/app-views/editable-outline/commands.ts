@@ -1094,8 +1094,11 @@ export function undoCommand(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
     const canUndoRes = appview.canUndo();
-    if (dispatch && canUndoRes) appview.undo();
-    return true;
+    if (dispatch && canUndoRes) {
+      // 异步执行撤销，不阻塞命令返回
+      appview.undo().catch(console.error);
+    }
+    return canUndoRes;
   };
 }
 
@@ -1103,8 +1106,11 @@ export function redoCommand(editor: TiptapEditor): Command {
   return function (state, dispatch) {
     const { appView: appview } = editor;
     const canRedoRes = appview.canRedo();
-    if (dispatch && canRedoRes) appview.redo();
-    return true;
+    if (dispatch && canRedoRes) {
+      // 异步执行重做，不阻塞命令返回
+      appview.redo().catch(console.error);
+    }
+    return canRedoRes;
   };
 }
 

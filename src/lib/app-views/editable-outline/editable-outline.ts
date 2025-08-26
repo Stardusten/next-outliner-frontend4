@@ -224,19 +224,124 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
   }
 
   canUndo(): boolean {
-    throw new Error("Not implemented");
+    return this.app.undoStack.length > 0;
   }
 
   canRedo(): boolean {
-    throw new Error("Not implemented");
+    return this.app.redoStack.length > 0;
   }
 
-  undo(): void {
-    throw new Error("Not implemented");
+  async undo(): Promise<void> {
+    const { app } = this;
+    if (app.undoStack.length === 0) return;
+    const lastTx = app.undoStack.pop()!;
+
+    const afterSelection = this.getSelectionInfo();
+    lastTx.afterSelection = afterSelection ?? undefined;
+
+    const id2Tmp: Record<BlockId, BlockId> = {};
+    const mapId = (id: BlockId) => id2Tmp[id] ?? app.idMapping[id] ?? id;
+
+    const result = await app.withTx((tx) => {
+      for (let i = lastTx.executedOps.length - 1; i >= 0; i--) {
+        const op = lastTx.executedOps[i]!;
+
+        if (op.type === "block:create") {
+          const blockId = mapId(op.blockId);
+          tx.deleteBlock(blockId);
+        } else if (op.type === "block:delete") {
+          const oldParentId = op.oldParent ? mapId(op.oldParent) : null;
+          const newBlockId = tx.createBlockUnder(oldParentId, op.oldIndex, {
+            type: op.oldData.type,
+            folded: op.oldData.folded,
+            content: op.oldData.content,
+            vo: op.oldData.vo,
+          });
+          id2Tmp[op.blockId] = newBlockId;
+        } else if (op.type === "block:move") {
+          const targetId = mapId(op.blockId);
+          const parentId = op.oldParent ? mapId(op.oldParent) : null;
+          tx.moveBlock(targetId, parentId, op.oldIndex);
+        } else if (op.type === "block:update") {
+          const blockId = mapId(op.blockId);
+          tx.updateBlock(blockId, op.oldData);
+        }
+      }
+
+      if (lastTx.beforeSelection) {
+        const sel = lastTx.beforeSelection;
+        const mappedSel = {
+          ...sel,
+          blockId: mapId(sel.blockId),
+        };
+        tx.setSelection(mappedSel);
+      }
+      tx.setOrigin("undoRedo");
+    });
+
+    const txIdMapping = result.idMapping;
+
+    for (const [oldId, tmpId] of Object.entries(id2Tmp)) {
+      const realId = txIdMapping[tmpId] || tmpId;
+      app.idMapping[oldId as BlockId] = realId;
+    }
+
+    app.redoStack.push(lastTx);
   }
 
-  redo(): void {
-    throw new Error("Not implemented");
+  async redo(): Promise<void> {
+    const { app } = this;
+    if (app.redoStack.length === 0) return;
+    const lastTx = app.redoStack.pop()!;
+
+    const id2Tmp: Record<BlockId, BlockId> = {};
+    const mapId = (id: BlockId) => id2Tmp[id] ?? app.idMapping[id] ?? id;
+
+    const result = await app.withTx((tx) => {
+      for (let i = 0; i < lastTx.executedOps.length; i++) {
+        const op = lastTx.executedOps[i]!;
+
+        if (op.type === "block:create") {
+          const parentId = op.parent ? mapId(op.parent) : null;
+          const newBlockId = tx.createBlockUnder(parentId, op.index, {
+            type: op.data.type,
+            folded: op.data.folded,
+            content: op.data.content,
+            vo: op.data.vo,
+          });
+          id2Tmp[op.blockId] = newBlockId;
+        } else if (op.type === "block:delete") {
+          const blockId = mapId(op.blockId);
+          tx.deleteBlock(blockId);
+        } else if (op.type === "block:move") {
+          const targetId = mapId(op.blockId);
+          const parentId = op.parent ? mapId(op.parent) : null;
+          tx.moveBlock(targetId, parentId, op.index);
+        } else if (op.type === "block:update") {
+          const blockId = mapId(op.blockId);
+          tx.updateBlock(blockId, op.newData);
+        }
+      }
+
+      if (lastTx.afterSelection) {
+        const sel = lastTx.afterSelection;
+        const mappedSel = {
+          ...sel,
+          blockId: mapId(sel.blockId),
+        };
+        tx.setSelection(mappedSel);
+      }
+      tx.setOrigin("undoRedo");
+    });
+
+    const txIdMapping = result.idMapping;
+
+    for (const [oldId, tmpId] of Object.entries(id2Tmp)) {
+      const realId = txIdMapping[tmpId] || tmpId;
+      app.idMapping[oldId as BlockId] = realId;
+    }
+
+    app.undoStack.push(lastTx);
   }
 
   async locateBlock(blockId: BlockId) {
