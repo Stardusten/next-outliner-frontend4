@@ -7,6 +7,8 @@ import ClearStorageConfirmDialog from "@/components/header/ClearStorageConfirmDi
 import ImportConfirmDialog from "@/components/header/ImportConfirmDialog";
 import SettingsPanel from "@/components/SettingsPanel";
 import { TagSelector } from "@/components/TagSelector";
+import { TagEditorDialog } from "@/components/TagEditorDialog";
+import { BlockPropertiesDialog } from "@/components/properties/BlockPropertiesDialog";
 import { useAppKeybinding } from "@/composables/useAppKeybinding";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 import { useMainRoots } from "@/composables/useMainRoots";
@@ -100,6 +102,8 @@ export const MainEditor = (props: Props) => {
         <DeleteBlockConfirm editor={mainEditorView()!} />
         <ImageRenameDialog app={props.app} />
         <TagSelector app={props.app} />
+        <TagEditorDialog app={props.app} />
+        <BlockPropertiesDialog app={props.app} />
       </Show>
     </>
   );

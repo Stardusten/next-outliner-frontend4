@@ -1,9 +1,10 @@
 import { For, Show, createSignal } from "solid-js";
 import { nanoid } from "nanoid";
-import type { TagField, TagFieldOptionsMode } from "@/lib/tiptap/nodes/tag";
+import type { FieldSchema, TagFieldOptionsMode } from "@/lib/common/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { TextField, TextFieldInput } from "@/components/ui/text-field";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -15,22 +16,22 @@ import { AlertCircle, ArrowDown, ArrowUp, Plus, Trash, X } from "lucide-solid";
 import { useI18n } from "@/composables/useI18n";
 
 type Props = {
-  value: TagField[];
-  onChange: (next: TagField[]) => void;
+  value: FieldSchema[];
+  onChange: (next: FieldSchema[]) => void;
 };
 
 export const TagFieldsEditor = (props: Props) => {
   const { t } = useI18n();
   const [newOption, setNewOption] = createSignal("");
 
-  const update = (updater: (curr: TagField[]) => TagField[]) => {
+  const update = (updater: (curr: FieldSchema[]) => FieldSchema[]) => {
     props.onChange(updater(props.value));
   };
 
   const addField = () => {
     update((curr) => [
       ...curr,
-      { id: nanoid(), label: "", type: "text", optional: false } as TagField,
+      { id: nanoid(), label: "", type: "text", optional: false } as FieldSchema,
     ]);
   };
 
@@ -56,13 +57,13 @@ export const TagFieldsEditor = (props: Props) => {
     });
   };
 
-  const updateField = (id: string, patch: Partial<TagField>) => {
+  const updateField = (id: string, patch: Partial<FieldSchema>) => {
     update((curr) =>
-      curr.map((f) => (f.id === id ? ({ ...f, ...patch } as TagField) : f))
+      curr.map((f) => (f.id === id ? ({ ...f, ...patch } as FieldSchema) : f))
     );
   };
 
-  const addOption = (field: TagField) => {
+  const addOption = (field: FieldSchema) => {
     const v = newOption().trim();
     if (!v) return;
     if (field.type === "single" || field.type === "multiple") {
@@ -74,7 +75,7 @@ export const TagFieldsEditor = (props: Props) => {
     setNewOption("");
   };
 
-  const removeOption = (field: TagField, idx: number) => {
+  const removeOption = (field: FieldSchema, idx: number) => {
     if (field.type === "single" || field.type === "multiple") {
       const options = (field.options ?? []).slice();
       options.splice(idx, 1);
@@ -111,6 +112,7 @@ export const TagFieldsEditor = (props: Props) => {
           <h2 class="text-sm">{t("tag.fieldsLabel")}</h2>
           <p class="text-xs text-muted-foreground">{t("tag.fieldsDesc")}</p>
         </div>
+
         <Button variant="outline" size="sm" onClick={addField}>
           <Plus />
           {t("tag.addField")}
@@ -180,18 +182,15 @@ export const TagFieldsEditor = (props: Props) => {
                   </Select>
                 </div>
 
-                <div class="w-8 space-y-2 ml-2">
+                <div class="w-20 space-y-2 ml-2">
                   <Label class="text-xs">{t("tag.fieldOptional")}</Label>
                   <div class="h-9 flex items-center justify-start">
-                    <Button
-                      variant={f.optional ? "secondary" : "outline"}
-                      size="2xs-icon"
-                      onClick={() =>
-                        updateField(f.id, { optional: !f.optional } as any)
+                    <Checkbox
+                      checked={!f.optional}
+                      onChange={(checked) =>
+                        updateField(f.id, { optional: !checked } as any)
                       }
-                    >
-                      {f.optional ? "✓" : ""}
-                    </Button>
+                    />
                   </div>
                 </div>
 

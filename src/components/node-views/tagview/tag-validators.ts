@@ -1,5 +1,5 @@
 import type { BlockId } from "@/lib/common/types";
-import type { TagField } from "@/lib/tiptap/nodes/tag";
+import type { FieldSchema } from "@/lib/common/types";
 
 export function parseInheritsInput(
   input: string
@@ -25,7 +25,7 @@ export function validateBlockIdsExist(
   return { ok: true };
 }
 
-export function cloneTagFields(src: TagField[]): TagField[] {
+export function cloneTagFields(src: FieldSchema[]): FieldSchema[] {
   return src.map((f) => ({
     id: f.id,
     label: f.label,
@@ -36,5 +36,5 @@ export function cloneTagFields(src: TagField[]): TagField[] {
       ? ([...(f as any).options] as string[])
       : undefined,
     fromTag: (f as any).fromTag,
-  })) as TagField[];
+  })) as FieldSchema[];
 }

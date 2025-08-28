@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import LLMWrapper from "@/lib/llm";
+import { LLMWrapper } from "@/lib/llm";
 import type { ServiceName } from "@/lib/llm/types";
 // @ts-expect-error
 import { readFileSync, existsSync } from "fs";
@@ -247,7 +247,7 @@ Supported providers: openai, anthropic, google, xai, grok, deepseek, ollama, cus
           throw error;
         }
       },
-      60000 // 60 second timeout for API calls
+      10000 // 10 second timeout for API calls
     );
   });
 });

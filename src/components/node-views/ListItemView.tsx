@@ -1,4 +1,5 @@
 import { useContextMenu } from "@/composables/useContextMenu";
+import { useDialogs } from "@/composables/useDialogs";
 import { useI18n } from "@/composables/useI18n";
 import {
   convertToSearchBlock,
@@ -24,6 +25,7 @@ import {
   Pilcrow,
   Repeat,
   Scissors,
+  Settings2,
   SVGAttributes,
   Tag,
   Text,
@@ -35,6 +37,7 @@ import { Html } from "../icon/Html";
 import { Markdown } from "../icon/Markdown";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
+import { BlockId } from "@/lib/common/types";
 
 const Dot = (props: SVGAttributes) => (
   <svg viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -131,7 +134,9 @@ const ListItemView = (props: ListItemViewProps) => {
     const blockId = props.node.attrs.blockId;
     const path = app.getBlockPath(blockId);
     if (path != null && path.length > 0) {
-      return path.map((blockId) => app.getTextContent(blockId)).join(" / ");
+      return path
+        .map((blockId: BlockId) => app.getTextContent(blockId))
+        .join(" / ");
     }
     return null;
   });
@@ -287,6 +292,15 @@ const ListItemView = (props: ListItemViewProps) => {
             const cmd = openSelectTagDialog(editor, blockId);
             appView.execCommand(cmd, true);
           }
+        },
+      },
+      {
+        type: "item",
+        icon: Settings2,
+        label: t("blockContextMenu.blockProperties"),
+        action: () => {
+          const { openBlockPropertiesDialog } = useDialogs(editor.appView.app);
+          openBlockPropertiesDialog(blockId);
         },
       },
       {

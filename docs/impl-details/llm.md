@@ -49,10 +49,15 @@ LLM (抽象基类) - llm.ts
 - 模型列表 (`getModels()`, `fetchModels()`)
 - 工具调用支持 (`toolCall()`, `parseTools()`)
 
-### LLMWrapper
+### LLMWrapper  
 统一的入口和工厂类，支持两种使用方式：
 1. **函数式调用** - 一次性对话
 2. **实例化调用** - 多轮对话
+
+**重要**：`LLMWrapper` 是一个值，不是类型。在 TypeScript 中导入类型应使用 `LLMServices`：
+```typescript
+import { LLMWrapper, type LLMServices } from '@/lib/llm';
+```
 
 ### APIv1
 OpenAI API v1 兼容的通用实现：
@@ -66,20 +71,20 @@ OpenAI API v1 兼容的通用实现：
 
 #### 1. 快速对话（函数式）
 ```typescript
-import LLMWrapper from '@/lib/llm';
+import { LLMWrapper } from '@/lib/llm';
 
 // 直接调用，返回响应
 const response = await LLMWrapper("Hello, how are you?", {
   service: "openai",
   apiKey: "sk-xxx",
-  model: "gpt-4"
+  model: "gpt-4"  // 注意：参数是 model 不是 modelName
 });
 console.log(response); // string
 ```
 
 #### 2. 多轮对话（实例化）
 ```typescript
-import LLMWrapper from '@/lib/llm';
+import { LLMWrapper } from '@/lib/llm';
 
 // 创建实例
 const llm = new LLMWrapper({
@@ -99,6 +104,20 @@ console.log(response);
 // 继续对话
 llm.user("Tell me more");
 const response2 = await llm.send();
+```
+
+#### 2.1 简化的 chat 方法
+```typescript
+// chat 方法是一个便捷方法，直接返回字符串
+const llm = new LLMWrapper({
+  service: "openai",
+  apiKey: "sk-xxx",
+  model: "gpt-4"
+});
+
+// chat 方法直接返回字符串，不是对象
+const response = await llm.chat("Hello!");
+console.log(response); // 直接是字符串内容
 ```
 
 #### 3. 使用特定服务类
@@ -292,6 +311,84 @@ setTimeout(() => {
 }, 1000);
 ```
 
+## 在应用中集成
+
+### 从应用配置创建 LLM 实例
+
+在实际应用中，通常需要从用户设置动态创建 LLM 实例：
+
+```typescript
+import { LLMWrapper, type LLMServices } from '@/lib/llm';
+
+// 从应用设置创建 LLM 实例
+function getLLMFromSettings(settings: AppSettings): LLMServices | null {
+  const { serviceProvider, apiKey, modelName, baseUrl } = settings.llm;
+  
+  if (!serviceProvider || !apiKey || !modelName) {
+    return null;
+  }
+  
+  try {
+    return new LLMWrapper({
+      service: serviceProvider,
+      apiKey,
+      model: modelName,  // 注意是 model 不是 modelName
+      ...(serviceProvider === "custom" && baseUrl && { baseUrl })
+    });
+  } catch (error) {
+    console.error("Failed to create LLMWrapper:", error);
+    return null;
+  }
+}
+```
+
+### 在 SolidJS 组件中使用
+
+```typescript
+import { createSignal, Switch, Match } from 'solid-js';
+import type { LLMServices } from '@/lib/llm';
+
+// 状态管理 - 使用联合类型避免状态不一致
+type AiState = 
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; result: string }
+  | { status: "error"; message: string };
+
+const [aiState, setAiState] = createSignal<AiState>({ status: "idle" });
+
+// 调用 LLM
+const handleAiRequest = async () => {
+  const llm = app.getLLM();
+  if (!llm) {
+    setAiState({ status: "error", message: "LLM not configured" });
+    return;
+  }
+  
+  setAiState({ status: "loading" });
+  
+  try {
+    const response = await llm.chat("Your prompt here");
+    setAiState({ status: "success", result: response });
+  } catch (error) {
+    setAiState({ status: "error", message: error.message });
+  }
+};
+
+// 在 JSX 中使用 - 避免立即执行函数，使用 Switch/Match
+<Switch>
+  <Match when={aiState().status === "loading"}>
+    <div>Loading...</div>
+  </Match>
+  <Match when={aiState().status === "success"}>
+    <div>{(aiState() as { status: "success"; result: string }).result}</div>
+  </Match>
+  <Match when={aiState().status === "error"}>
+    <div>{(aiState() as { status: "error"; message: string }).message}</div>
+  </Match>
+</Switch>
+```
+
 ## 注意事项
 
 ### 1. API Key 管理
@@ -393,6 +490,7 @@ const llm = new LLMWrapper({
 ### 7. TypeScript 类型
 
 ```typescript
+import { LLMWrapper, type LLMServices } from '@/lib/llm';
 import type { 
   Options, 
   Response, 
@@ -405,13 +503,26 @@ import type {
 // 使用类型安全的配置
 const options: Options = {
   service: "openai",
-  model: "gpt-4",
+  model: "gpt-4",  // 注意是 model 不是 modelName
   temperature: 0.7,
   max_tokens: 1000
 };
 
 const llm = new LLMWrapper(options);
+
+// 函数返回类型应使用 LLMServices
+function createLLM(config: Options): LLMServices {
+  return new LLMWrapper(config);
+}
 ```
+
+### 8. 常见错误及解决方案
+
+| 错误 | 原因 | 解决方案 |
+|------|------|---------|
+| `'LLMWrapper' refers to a value, but is being used as a type` | 错误地将 LLMWrapper 作为类型使用 | 使用 `type LLMServices` 作为类型 |
+| `Property 'content' does not exist on type 'string'` | chat() 方法返回字符串，不是对象 | 直接使用返回的字符串 |
+| `Object literal may only specify known properties, and 'modelName' does not exist` | 构造函数参数错误 | 使用 `model` 而不是 `modelName` |
 
 ## 测试
 

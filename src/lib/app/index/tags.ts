@@ -51,49 +51,60 @@ export function initTagsIndex(app: AppStep13) {
   }
   setTags(tags);
 
-  return Object.assign(app, {
+  const result = Object.assign(app, {
     tags: tagsSignal,
-    searchTags,
+
+    // 添加更优雅的标签访问方法
+    getTagAttrs(tagId: BlockId): TagAttrs | null {
+      const [getTags] = tagsSignal;
+      return getTags().get(tagId) || null;
+    },
+
+    hasTag(tagId: BlockId): boolean {
+      const [getTags] = tagsSignal;
+      return getTags().has(tagId);
+    },
+
+    getAllTagIds(): BlockId[] {
+      const [getTags] = tagsSignal;
+      return Array.from(getTags().keys());
+    },
+
+    getAllTagAttrs(): Map<BlockId, TagAttrs> {
+      const [getTags] = tagsSignal;
+      return new Map(getTags());
+    },
+
+    searchTags(
+      query?: string,
+      filter?: (blockNode: BlockNode) => boolean
+    ): BlockNode[] {
+      if (query && query.trim().length > 0) {
+        const [getTags] = tagsSignal;
+        const tags = getTags();
+
+        const queryTokens = hybridTokenize(query, {
+          caseSensitive: false,
+          cjkNGram: 1,
+          includePrefix: false,
+          removeDiacritics: app.fulltextConfig.ignoreDiacritics,
+        });
+
+        const idAndScores: { id: BlockId; score: number }[] = [];
+        for (const blockId of tags.keys()) {
+          const textContent = app.getTextContent(blockId);
+          const score = calcMatchScore(queryTokens, textContent);
+          idAndScores.push({ id: blockId, score });
+        }
+        idAndScores.sort((a, b) => b.score - a.score);
+
+        return idAndScores
+          .filter((idAndScore) => idAndScore.score > 0)
+          .map((item) => app.getBlockNode(item.id))
+          .filter((b) => b != null && (!filter || filter(b))) as BlockNode[];
+      } else return [];
+    },
   });
-}
 
-type AppWithTags = AppStep13 & {
-  tags: Signal<ReactiveMap<BlockId, TagAttrs>>;
-};
-
-/**
- * 搜索标签
- * @param query 搜索串
- * @param filter 过滤函数，如果返回 false，则结果中不包含这个标签
- * @returns 匹配的标签
- */
-function searchTags(
-  app: AppWithTags,
-  query?: string,
-  filter?: (blockNode: BlockNode) => boolean
-): BlockNode[] {
-  if (query && query.trim().length > 0) {
-    const [getTags] = app.tags;
-    const tags = getTags();
-
-    const queryTokens = hybridTokenize(query, {
-      caseSensitive: false,
-      cjkNGram: 1,
-      includePrefix: false,
-      removeDiacritics: app.fulltextConfig.ignoreDiacritics,
-    });
-
-    const idAndScores: { id: BlockId; score: number }[] = [];
-    for (const blockId of tags.keys()) {
-      const textContent = app.getTextContent(blockId);
-      const score = calcMatchScore(queryTokens, textContent);
-      idAndScores.push({ id: blockId, score });
-    }
-    idAndScores.sort((a, b) => b.score - a.score);
-
-    return idAndScores
-      .filter((idAndScore) => idAndScore.score > 0)
-      .map((item) => app.getBlockNode(item.id))
-      .filter((b) => b != null && (!filter || filter(b))) as BlockNode[];
-  } else return [];
+  return result;
 }

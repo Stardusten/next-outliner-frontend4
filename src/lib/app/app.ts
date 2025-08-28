@@ -19,6 +19,8 @@ import { initAppViews } from "./views";
 import { useNavigate, useParams } from "@solidjs/router";
 import { initUiStates } from "./ui-states";
 import { initTagsIndex } from "./index/tags";
+import { initAiService } from "./ai-service";
+import { initBlockPropertiesApi } from "./block-properties";
 
 export type AppEvents = {
   "tx-committed": {
@@ -77,7 +79,9 @@ export function createApp(
   const app12 = initUndoRedoManager(app11);
   const app13 = initUiStates(app12);
   const app14 = initTagsIndex(app13);
-  return app14;
+  const app15 = initAiService(app14);
+  const app16 = initBlockPropertiesApi(app15);
+  return app16;
 }
 
 export function destroyApp(app: App) {
@@ -98,7 +102,9 @@ export type AppStep11 = ReturnType<typeof initTransactionManager>;
 export type AppStep12 = ReturnType<typeof initUndoRedoManager>;
 export type AppStep13 = ReturnType<typeof initUiStates>;
 export type AppStep14 = ReturnType<typeof initTagsIndex>;
-export type App = AppStep14;
+export type AppStep15 = ReturnType<typeof initAiService>;
+export type AppStep16 = ReturnType<typeof initBlockPropertiesApi>;
+export type App = AppStep16;
 
 function initEb(app: InitialApp) {
   const eb = mitt<AppEvents>();

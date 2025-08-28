@@ -115,8 +115,9 @@ const labelVariants = cva(
     variants: {
       variant: {
         label: "data-[invalid]:text-destructive",
-        description: "text-xs text-muted-foreground",
+        description: "font-normal text-muted-foreground",
         error: "text-xs text-destructive",
+        warning: "text-xs text-amber-600 dark:text-amber-400",
       },
     },
     defaultVariants: {
@@ -178,6 +179,27 @@ const TextFieldErrorMessage = <T extends ValidComponent = "div">(
   );
 };
 
+// New: TextFieldWarningMessage
+
+type TextFieldWarningMessageProps<T extends ValidComponent = "div"> =
+  TextFieldPrimitive.TextFieldErrorMessageProps<T> & {
+    class?: string | undefined;
+  };
+
+const TextFieldWarningMessage = <T extends ValidComponent = "div">(
+  props: PolymorphicProps<T, TextFieldWarningMessageProps<T>>
+) => {
+  const [local, others] = splitProps(props as TextFieldWarningMessageProps, [
+    "class",
+  ]);
+  return (
+    <div
+      class={cn(labelVariants({ variant: "warning" }), local.class)}
+      {...others}
+    />
+  );
+};
+
 export {
   TextField,
   TextFieldInput,
@@ -185,4 +207,5 @@ export {
   TextFieldLabel,
   TextFieldDescription,
   TextFieldErrorMessage,
+  TextFieldWarningMessage,
 };

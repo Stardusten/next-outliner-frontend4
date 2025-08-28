@@ -91,7 +91,7 @@ export function useBlockRefCompletion(app: App) {
       const filter = filteredTags
         ? (n: BlockNode) => !filteredTags.includes(n.id)
         : undefined;
-      const matchedTags = app.searchTags(app, query, filter);
+      const matchedTags = app.searchTags(query, filter);
       setAvailableBlocks(matchedTags);
     } else {
       const allTags: BlockNode[] = [];

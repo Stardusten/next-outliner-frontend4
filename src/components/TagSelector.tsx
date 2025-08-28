@@ -7,8 +7,17 @@ import { createSimpleKeydownHandler } from "@/lib/common/keybinding";
 import { BlockId } from "@/lib/common/types";
 import { mac } from "@/lib/utils";
 import { ReactiveSet } from "@solid-primitives/set";
-import { WandSparkles } from "lucide-solid";
-import { createEffect, createMemo, createSignal, For } from "solid-js";
+import { Check, Loader2, WandSparkles } from "lucide-solid";
+import {
+  batch,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Show,
+  Switch,
+  Match,
+} from "solid-js";
 import { Button, ColorfulButton } from "./ui/button";
 import {
   Dialog,
@@ -28,6 +37,17 @@ export const TagSelector = (props: { app: App }) => {
     new ReactiveSet<BlockId>()
   );
   const [focusedIndex, setFocusedIndex] = createSignal(-1);
+
+  // AI 建议状态管理
+  type AiSuggestState =
+    | { status: "idle" }
+    | { status: "loading" }
+    | { status: "success" }
+    | { status: "error"; message: string };
+
+  const [aiSuggestState, setAiSuggestState] = createSignal<AiSuggestState>({
+    status: "idle",
+  });
 
   // 获取当前可用的标签列表
   const availableTags = createMemo(() => [...tags().entries()]);
@@ -68,8 +88,148 @@ export const TagSelector = (props: { app: App }) => {
     props.app.refocus();
   };
 
-  const handleAiSuggest = () => {
-    console.log("AI 建议功能待实现");
+  const handleAiSuggest = async () => {
+    // 如果正在加载或刚完成，不处理
+    const currentState = aiSuggestState();
+    if (
+      currentState.status === "loading" ||
+      currentState.status === "success"
+    ) {
+      return;
+    }
+
+    setAiSuggestState({ status: "loading" });
+
+    try {
+      // 获取 LLM 实例
+      const llm = props.app.getLLM();
+      if (!llm) {
+        const errorMsg = t("tagSelector.noLLMConfig");
+        if (errorMsg) {
+          setAiSuggestState({ status: "error", message: errorMsg });
+        }
+        return;
+      }
+
+      // 获取当前块的内容
+      const blockId = props.app.tagSelector.blockId;
+      if (!blockId) return;
+
+      // 获取当前块的文本内容
+      const blockContent = props.app.getTextContent(blockId);
+
+      // 获取当前块所在子树的内容（包含子块）
+      const blockNode = props.app.getBlockNode(blockId);
+      if (!blockNode) return;
+
+      // 递归获取子树内容
+      const getSubtreeContent = (nodeId: BlockId, depth = 0): string => {
+        if (depth > 3) return ""; // 限制深度避免太多内容
+        const node = props.app.getBlockNode(nodeId);
+        if (!node) return "";
+
+        const indent = "  ".repeat(depth);
+        let content = indent + props.app.getTextContent(nodeId);
+
+        const children = node.children();
+        if (!children) return content;
+        for (const child of children) {
+          const childContent = getSubtreeContent(child.id, depth + 1);
+          if (childContent) {
+            content += "\n" + childContent;
+          }
+        }
+
+        return content;
+      };
+
+      const subtreeContent = getSubtreeContent(blockId);
+
+      // 获取所有现有标签
+      const existingTags = availableTags().map(([id, attrs]) => ({
+        name: props.app.getTextContent(id),
+        color: attrs.color,
+      }));
+
+      // 构建 prompt
+      const prompt = `分析以下内容，为其推荐最适合的标签。
+
+当前块内容：
+${blockContent}
+
+完整上下文（包含子块）：
+${subtreeContent}
+
+现有标签库：
+${existingTags.map((tag) => `#${tag.name}`).join(", ")}
+
+请基于内容的主题、类型和关键概念，返回 3-5 个最适合的标签名称。
+- 优先从现有标签库中选择
+- 如果现有标签不够准确，可以建议新标签
+- 只返回标签名称，用逗号分隔，不要包含 # 符号
+- 不要返回任何解释或其他文字
+
+示例输出格式：工作, 项目管理, 待办事项`;
+
+      // 调用 LLM - chat 方法返回的是字符串
+      const response = await llm.chat(prompt);
+
+      if (!response || typeof response !== "string") {
+        throw new Error("No response from LLM");
+      }
+
+      // 解析响应
+      const suggestedTagNames = response
+        .split(/[,，]/)
+        .map((tag: string) => tag.trim())
+        .filter((tag: string) => tag.length > 0);
+
+      // 找到对应的标签 ID 或创建新标签
+      const newSelectedTags = new ReactiveSet(selectedTags());
+
+      for (const tagName of suggestedTagNames) {
+        // 查找现有标签
+        const existingTag = availableTags().find(([id]) => {
+          const name = props.app.getTextContent(id);
+          return name.toLowerCase() === tagName.toLowerCase();
+        });
+
+        if (existingTag) {
+          newSelectedTags.add(existingTag[0]);
+        } else {
+          // 如果是新标签，可以提示用户
+          console.log(`建议的新标签: ${tagName}`);
+        }
+      }
+
+      setSelectedTags(newSelectedTags);
+
+      // 如果有建议的新标签，可以显示提示
+      const newTags = suggestedTagNames.filter((tagName: string) => {
+        return !availableTags().some(([id]) => {
+          const name = props.app.getTextContent(id);
+          return name.toLowerCase() === tagName.toLowerCase();
+        });
+      });
+
+      if (newTags.length > 0) {
+        console.log(`AI 建议创建新标签: ${newTags.join(", ")}`);
+      }
+
+      // 显示成功状态
+      setAiSuggestState({ status: "success" });
+
+      // 2秒后恢复初始状态
+      setTimeout(() => {
+        setAiSuggestState({ status: "idle" });
+      }, 2000);
+    } catch (error) {
+      console.error("AI suggestion error:", error);
+      const errorMsg = t("tagSelector.aiSuggestError");
+      if (errorMsg) {
+        setAiSuggestState({ status: "error", message: errorMsg });
+      }
+    }
   };
 
   // 键盘导航处理函数
@@ -293,21 +453,68 @@ export const TagSelector = (props: { app: App }) => {
 
         <DialogFooter>
           <div class="w-full flex flex-row justify-between">
-            <Tooltip>
-              <TooltipTrigger
-                as={(p: any) => (
-                  <ColorfulButton onClick={handleAiSuggest} {...p}>
-                    <WandSparkles />
-                    {t("tagSelector.aiSuggest")}
-                  </ColorfulButton>
-                )}
-              />
-              <TooltipContent>
-                {t("tagSelector.aiSuggestTooltip", {
-                  kbd: mac ? "⌘-3" : "Ctrl-3",
-                })}
-              </TooltipContent>
-            </Tooltip>
+            <div class="flex flex-col gap-2 items-start">
+              <Tooltip>
+                <TooltipTrigger
+                  as={(p: any) => (
+                    <ColorfulButton
+                      {...p}
+                      onClick={handleAiSuggest}
+                      disabled={
+                        aiSuggestState().status === "loading" ||
+                        aiSuggestState().status === "success"
+                      }
+                    >
+                      <Switch>
+                        <Match when={aiSuggestState().status === "loading"}>
+                          <Loader2 class="animate-spin" />
+                        </Match>
+                        <Match when={aiSuggestState().status === "success"}>
+                          <Check />
+                        </Match>
+                        <Match
+                          when={
+                            aiSuggestState().status === "idle" ||
+                            aiSuggestState().status === "error"
+                          }
+                        >
+                          <WandSparkles />
+                        </Match>
+                      </Switch>
+                      <Switch>
+                        <Match when={aiSuggestState().status === "loading"}>
+                          {t("tagSelector.aiSuggestLoading")}
+                        </Match>
+                        <Match when={aiSuggestState().status === "success"}>
+                          {t("tagSelector.aiSuggestSuccess")}
+                        </Match>
+                        <Match
+                          when={
+                            aiSuggestState().status === "idle" ||
+                            aiSuggestState().status === "error"
+                          }
+                        >
+                          {t("tagSelector.aiSuggest")}
+                        </Match>
+                      </Switch>
+                    </ColorfulButton>
+                  )}
+                />
+                <TooltipContent>
+                  {t("tagSelector.aiSuggestTooltip", {
+                    kbd: mac ? "⌘-3" : "Ctrl-3",
+                  })}
+                </TooltipContent>
+              </Tooltip>
+              <Show when={aiSuggestState().status === "error"}>
+                <span class="text-xs text-destructive">
+                  {
+                    (aiSuggestState() as { status: "error"; message: string })
+                      .message
+                  }
+                </span>
+              </Show>
+            </div>
 
             <div class="flex flex-row gap-2">
               <Tooltip>

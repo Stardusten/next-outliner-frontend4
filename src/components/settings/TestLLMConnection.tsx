@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Check, X } from "lucide-solid";
 import type { SettingRenderContext } from "@/composables/useSettings";
 import { useI18n } from "@/composables/useI18n";
-import LLMWrapper from "@/lib/llm";
+import { LLMWrapper } from "@/lib/llm";
 import type { ServiceName } from "@/lib/llm/types";
 
 export default function TestLLMConnection(props: {
@@ -97,7 +97,7 @@ export default function TestLLMConnection(props: {
 
     try {
       const config = getLLMConfig();
-      
+
       // 创建 LLM 实例并验证连接
       const llm = new LLMWrapper(config);
       const isConnected = await llm.verifyConnection();
@@ -110,10 +110,10 @@ export default function TestLLMConnection(props: {
             setTestResult({
               success: true,
               messageKey: "llmTest.connectionSuccessful",
-              message: t("llmTest.connectionSuccessful", { 
-                count: models.length 
+              message: t("llmTest.connectionSuccessful", {
+                count: models.length,
               }) as string,
-              params: { count: models.length }
+              params: { count: models.length },
             });
           } else {
             // 连接成功但没有找到模型
@@ -136,18 +136,24 @@ export default function TestLLMConnection(props: {
       }
     } catch (error: any) {
       console.error("LLM connection test failed:", error);
-      
+
       // 分析错误类型并提供有用的反馈
       let errorMessage = t("llmTest.testFailed") as string;
       let messageKey = "llmTest.testFailed";
-      
-      if (error?.message?.includes("401") || error?.message?.includes("Unauthorized")) {
+
+      if (
+        error?.message?.includes("401") ||
+        error?.message?.includes("Unauthorized")
+      ) {
         errorMessage = t("llmTest.invalidApiKey") as string;
         messageKey = "llmTest.invalidApiKey";
       } else if (error?.message?.includes("404")) {
         errorMessage = t("llmTest.modelNotFound") as string;
         messageKey = "llmTest.modelNotFound";
-      } else if (error?.message?.includes("Failed to fetch") || error?.message?.includes("NetworkError")) {
+      } else if (
+        error?.message?.includes("Failed to fetch") ||
+        error?.message?.includes("NetworkError")
+      ) {
         errorMessage = t("llmTest.networkError") as string;
         messageKey = "llmTest.networkError";
       } else if (error?.message?.includes("429")) {

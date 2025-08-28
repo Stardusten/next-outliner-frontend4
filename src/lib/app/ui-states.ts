@@ -7,6 +7,7 @@ import { RepoConfig } from "../repo/schema";
 import { SearchResult } from "@/composables/useSearch";
 import { ZoomingStackItem } from "../app-views/editable-outline/commands";
 import type { Node } from "@tiptap/pm/model";
+import type { TagAttrs } from "../tiptap/nodes/tag";
 
 export function initUiStates(app: AppStep12) {
   return Object.assign(app, {
@@ -51,6 +52,11 @@ export function initUiStates(app: AppStep12) {
       openSignal: createSignal(false),
       blockId: null as BlockId | null,
     },
+    tagEditor: {
+      openSignal: createSignal(false),
+      blockId: null as BlockId | null,
+      attrs: null as TagAttrs | null,
+    },
     blockRefCompletion: {
       visibleSignal: createSignal(false),
       querySignal: createSignal(""),
@@ -58,6 +64,10 @@ export function initUiStates(app: AppStep12) {
       availableBlocksSignal: createSignal<BlockNode[]>([]),
       activeIndexSignal: createSignal(0),
       debounceTimer: undefined as number | undefined,
+    },
+    blockPropertiesDialog: {
+      openSignal: createSignal(false),
+      blockId: null as BlockId | null,
     },
   });
 }

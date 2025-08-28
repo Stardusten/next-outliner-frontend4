@@ -171,4 +171,4 @@ LLMWrapper.unregister = (LLMClass: typeof LLM) => {
   SERVICES = SERVICES.filter((Service) => Service !== LLMClass);
 };
 
-export default LLMWrapper;
+export { LLMWrapper };
