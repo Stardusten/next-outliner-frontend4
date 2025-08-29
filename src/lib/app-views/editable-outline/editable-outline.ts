@@ -1,6 +1,7 @@
 import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import type { App, AppEvents } from "@/lib/app/app";
-import type { BlockId, SelectionInfo } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
+import type { ViewParams } from "@/lib/common/types/app-view";
 import type { RepoConfig } from "@/lib/repo/schema";
 import { schemaExts } from "@/lib/tiptap/schema";
 import {
@@ -10,7 +11,7 @@ import {
   getAbsPos,
   highlightEphemeral,
   scrollPmNodeIntoView,
-} from "@/lib/tiptap/utils";
+} from "@/lib/common/utils/tiptap";
 import { Editor as TiptapEditor } from "@tiptap/core";
 import { AnyExtension } from "@tiptap/core";
 import { Node as ProseMirrorNode } from "@tiptap/pm/model";
@@ -18,12 +19,13 @@ import { TextSelection, Transaction, type Command } from "@tiptap/pm/state";
 import type { Emitter } from "mitt";
 import mitt from "mitt";
 import { nanoid } from "nanoid";
-import type { AppView, AppViewId } from "../types";
+import type { AppView, AppViewId } from "@/lib/common/types/app-view";
 import { Accessor, createEffect, createSignal, Setter } from "solid-js";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";
 import { FullRenderer } from "./renderers/full";
 import { Patcher } from "./renderers/patch";
-import { RenderOptions } from "./renderers/types";
+import { RenderOptions } from "@/lib/common/types/app-view";
+import { applyIdMappingToViewParams } from "@/lib/common/utils/view-params";
 
 declare module "@tiptap/core" {
   interface Editor {
@@ -173,7 +175,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     else command(view.state, undefined, undefined);
   }
 
-  getSelectionInfo(): SelectionInfo | null {
+  getViewParams(): ViewParams | null {
     if (!this.tiptap) throw new Error("Editor not mounted");
     const state = this.tiptap.state;
     const sel = state.selection;
@@ -181,10 +183,16 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     return listItemInfo && listItemInfo.node.attrs.blockId
       ? {
           viewId: this.id,
-          blockId: listItemInfo.node.attrs.blockId,
-          anchor: sel.from - (listItemInfo.pos + 2),
+          selection: {
+            blockId: listItemInfo.node.attrs.blockId,
+            anchor: sel.from - (listItemInfo.pos + 2),
+          },
+          rootBlockIds: this.getRootBlockIds(),
         }
-      : null;
+      : {
+          viewId: this.id,
+          rootBlockIds: this.getRootBlockIds(),
+        };
   }
 
   coordAtPos(pos: number): {
@@ -236,7 +244,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     if (app.undoStack.length === 0) return;
     const lastTx = app.undoStack.pop()!;
 
-    const afterSelection = this.getSelectionInfo();
+    const afterSelection = this.getViewParams();
     lastTx.afterSelection = afterSelection ?? undefined;
 
     const id2Tmp: Record<BlockId, BlockId> = {};
@@ -269,12 +277,9 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       }
 
       if (lastTx.beforeSelection) {
-        const sel = lastTx.beforeSelection;
-        const mappedSel = {
-          ...sel,
-          blockId: mapId(sel.blockId),
-        };
-        tx.setSelection(mappedSel);
+        const viewParams = lastTx.beforeSelection;
+        const mappedViewParams = applyIdMappingToViewParams(mapId, viewParams);
+        tx.setViewParams(mappedViewParams);
       }
       tx.setOrigin("undoRedo");
     });
@@ -325,11 +330,8 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
 
       if (lastTx.afterSelection) {
         const sel = lastTx.afterSelection;
-        const mappedSel = {
-          ...sel,
-          blockId: mapId(sel.blockId),
-        };
-        tx.setSelection(mappedSel);
+        const mappedViewParams = applyIdMappingToViewParams(mapId, sel);
+        tx.setViewParams(mappedViewParams);
       }
       tx.setOrigin("undoRedo");
     });
@@ -430,17 +432,21 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
         this.setRootBlockIds([blockId]);
         const children = tx.getChildrenIds(blockId);
         if (children.length > 0) {
-          tx.setSelection({
+          tx.setViewParams({
             viewId: this.id,
-            blockId: children[0]!,
-            anchor: 0,
+            selection: {
+              blockId: children[0]!,
+              anchor: 0,
+            },
             scrollIntoView: true,
           });
         } else {
-          tx.setSelection({
+          tx.setViewParams({
             viewId: this.id,
-            blockId,
-            anchor: 0,
+            selection: {
+              blockId,
+              anchor: 0,
+            },
             scrollIntoView: true,
           });
         }
@@ -448,7 +454,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     }
   }
 
-  #rerender(selection?: SelectionInfo, fromStorageSync = false) {
+  #rerender(viewParams?: ViewParams, fromStorageSync = false) {
     if (!this.tiptap) throw new Error("Editor not mounted");
 
     // 计算根块
@@ -465,38 +471,38 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     let tr = state.tr.replaceWith(0, state.doc.content.size, newDoc);
 
     // 如果是来自存储同步，加上 STORAGE_SYNC_META_KEY 标记
-    if (fromStorageSync) {
-      tr = tr.setMeta(STORAGE_SYNC_META_KEY, true);
-    }
+    if (fromStorageSync) tr = tr.setMeta(STORAGE_SYNC_META_KEY, true);
 
-    // 如果指定了要恢复的选区，并且选区属于当前编辑器，则恢复
-    let setSelectionSuccess = false;
-    if (selection != null && selection.viewId === this.id) {
-      const anchor = getAbsPos(tr.doc, selection.blockId, selection.anchor);
-      const head = selection.head
-        ? getAbsPos(tr.doc, selection.blockId, selection.head) ?? undefined
-        : undefined;
-      if (anchor !== null) {
-        tr = tr.setSelection(TextSelection.create(tr.doc, anchor, head));
-        setSelectionSuccess = true;
+    // 根据 viewParams 恢复视图状态
+    if (viewParams?.viewId === this.id) {
+      // 恢复选区
+      const sel = viewParams.selection;
+      let anchor: number | null = null;
+      if (sel) {
+        anchor = getAbsPos(tr.doc, sel.blockId, sel.anchor);
+        const head = sel.head
+          ? getAbsPos(tr.doc, sel.blockId, sel.head) ?? undefined
+          : undefined;
+
+        if (anchor !== null)
+          tr = tr.setSelection(TextSelection.create(tr.doc, anchor, head));
+        // 如果恢复选区失败，则设置选区为文档开头，防止选中整个文档
+        else tr = tr.setSelection(TextSelection.create(tr.doc, 0));
       }
-      if (selection.scrollIntoView) {
-        tr = tr.scrollIntoView();
-      }
-      if (selection.highlight && anchor !== null) {
-        setTimeout(() => {
-          highlightEphemeral(this.tiptap!.view, anchor);
-        });
-      }
+
+      // 滚动到选区位置
+      if (viewParams.scrollIntoView) tr = tr.scrollIntoView();
+
+      // 要求高亮
+      if (viewParams.highlight && anchor !== null)
+        setTimeout(() => highlightEphemeral(this.tiptap!.view, anchor));
+
+      // 更新根块
+      if (viewParams.rootBlockIds)
+        this.setRootBlockIds(viewParams.rootBlockIds);
+
       this.tiptap.view.focus();
     }
-
-    // 如果恢复选区失败，则设置选区为文档开头
-    // 防止选中整个文档
-    if (!setSelectionSuccess) {
-      tr = tr.setSelection(TextSelection.create(tr.doc, 0));
-    }
-
     this.tiptap.view.dispatch(tr);
   }
 
@@ -508,40 +514,42 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       this.patcher.updateView(appTx);
 
       // 恢复选区
-      const selection = appTx.meta.selection;
-      if (selection != null && selection.viewId === this.id) {
-        const state = this.tiptap.state;
-        const anchor = getAbsPos(
-          state.doc,
-          selection.blockId,
-          selection.anchor
-        );
-        const head = selection.head
-          ? getAbsPos(state.doc, selection.blockId, selection.head) ?? undefined
-          : undefined;
+      const viewParams = appTx.meta.viewParams;
+      const state = this.tiptap.state;
+      let tr = state.tr;
 
-        if (anchor !== null) {
-          let tr = state.tr.setSelection(
-            TextSelection.create(state.doc, anchor, head)
-          );
+      if (viewParams?.viewId === this.id) {
+        const sel = viewParams.selection;
+        let anchor: number | null = null;
+        if (sel) {
+          anchor = getAbsPos(state.doc, sel.blockId, sel.anchor);
+          const head = sel.head
+            ? getAbsPos(tr.doc, sel.blockId, sel.head) ?? undefined
+            : undefined;
 
-          if (selection.scrollIntoView) {
-            tr = tr.scrollIntoView();
-          }
-
-          if (selection.highlight && anchor !== null) {
-            setTimeout(() => {
-              highlightEphemeral(this.tiptap!.view, anchor);
-            });
-          }
-
-          this.tiptap.view.dispatch(tr);
-          this.tiptap.view.focus();
+          if (anchor !== null)
+            tr = tr.setSelection(TextSelection.create(state.doc, anchor, head));
+          // 如果恢复选区失败，则设置选区为文档开头，防止选中整个文档
+          else tr = tr.setSelection(TextSelection.create(state.doc, 0));
         }
+
+        // 滚动到选区位置
+        if (viewParams.scrollIntoView) tr = tr.scrollIntoView();
+
+        // 要求高亮
+        if (viewParams.highlight && anchor !== null)
+          setTimeout(() => highlightEphemeral(this.tiptap!.view, anchor!));
+
+        // 更新根块
+        if (viewParams.rootBlockIds)
+          this.setRootBlockIds(viewParams.rootBlockIds);
+
+        this.tiptap.view.focus();
       }
+      this.tiptap.view.dispatch(tr);
     } catch (error) {
       console.warn("增量更新失败，回退到全量重绘:", error);
-      this.#rerender(appTx.meta.selection, true);
+      this.#rerender(appTx.meta.viewParams, true);
     }
   }
 
@@ -554,7 +562,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       if (!this.tiptap) throw new Error("Editor not mounted");
 
       // 先记录当前选区
-      const beforeSelection = this.getSelectionInfo() ?? undefined;
+      const beforeSelection = this.getViewParams() ?? undefined;
 
       // 调用默认实现
       defaultImpl(transaction);
@@ -577,7 +585,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     };
   }
 
-  #syncContentChangesToApp(tr: Transaction, beforeSelection?: SelectionInfo) {
+  #syncContentChangesToApp(tr: Transaction, beforeSelection?: ViewParams) {
     // 这样做能 work，基于传入的 transaction 的每个 step 只操作单个 listItem
     // 不会一个 step 操作多个 listItem
     //
@@ -619,7 +627,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
           (tx) => {
             tx.updateBlock(blockId, newData);
             tx.setOrigin("localEditorContent" + this.id);
-            beforeSelection && tx.setBeforeSelection(beforeSelection);
+            beforeSelection && tx.setBeforeViewParams(beforeSelection);
           },
           {
             // 按编辑器ID和块ID分组防抖，确保不同块之间不会互相影响
@@ -643,7 +651,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
       if (incrementalUpdate) this.#patchStateAccAppTx(event);
       else {
         const selection =
-          event.meta.selection ?? this.getSelectionInfo() ?? undefined;
+          event.meta.viewParams ?? this.getViewParams() ?? undefined;
         this.#rerender(selection, true);
       }
     };

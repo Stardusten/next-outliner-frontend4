@@ -7,10 +7,10 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import type { BlockNode } from "@/lib/common/types";
+import type { BlockNode } from "@/lib/common/types/block";
 import type { App } from "@/lib/app/app";
 import { ReadonlyBlockView as ReadonlyBlockViewClass } from "@/lib/app-views/read-only-block/read-only-block";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/common/utils/tailwindcss";
 import "./readonly-block-view.css";
 
 type Props = {

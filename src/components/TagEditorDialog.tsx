@@ -15,9 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/composables/useI18n";
 import { App } from "@/lib/app/app";
-import type { BlockId } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
 import type { TagAttrs } from "@/lib/tiptap/nodes/tag";
-import type { FieldSchema } from "@/lib/common/types";
+import type { FieldSchema } from "@/lib/common/types/block-field";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 import { updateTagBlockAttrs } from "@/lib/app-views/editable-outline/commands";
 import ColorSection from "@/components/node-views/tagview/ColorSection";

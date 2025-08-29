@@ -10,9 +10,9 @@ import {
   toggleParagraphBlock,
   zoomin,
 } from "@/lib/app-views/editable-outline/commands";
-import { clipboard } from "@/lib/common/clipboard";
-import { toMarkdown } from "@/lib/common/markdown";
-import { isDescendantOf } from "@/lib/utils";
+import { clipboard } from "@/lib/common/utils/clipboard";
+import { toMarkdown } from "@/lib/common/utils/markdown";
+import { isDescendantOf } from "@/lib/common/utils/dom";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
 import { Node } from "@tiptap/pm/model";
 import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";
@@ -37,7 +37,7 @@ import { Html } from "../icon/Html";
 import { Markdown } from "../icon/Markdown";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
-import { BlockId } from "@/lib/common/types";
+import { BlockId } from "@/lib/common/types/block";
 
 const Dot = (props: SVGAttributes) => (
   <svg viewBox="0 0 15 15" xmlns="http://www.w3.org/2000/svg" {...props}>

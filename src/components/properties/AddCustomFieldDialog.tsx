@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useI18n } from "@/composables/useI18n";
+import { RecursivePartial } from "@/lib/common/types/util";
 import {
   CheckboxFieldSchema,
   DateFieldSchema,
@@ -28,10 +29,9 @@ import {
   FieldSchema,
   MultipleChoiceFieldSchema,
   NumberFieldSchema,
-  RecursivePartial,
   SingleChoiceFieldSchema,
   TextFieldSchema,
-} from "@/lib/common/types";
+} from "@/lib/common/types/block-field";
 import { CheckboxInput } from "./inputs/CheckboxInput";
 import { NumberInput } from "./inputs/NumberInput";
 import { TextInput } from "./inputs/TextInput";

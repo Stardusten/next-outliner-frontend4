@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { InputRule, inputRules } from "@tiptap/pm/inputrules";
-import { contentNodeToStr, findCurrListItem } from "../utils";
-import { BlockId } from "@/lib/common/types";
+import { contentNodeToStr, findCurrListItem } from "../../common/utils/tiptap";
+import { BlockId } from "@/lib/common/types/block";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 const TO_NUMBERED = "to-numbered";
@@ -38,10 +38,9 @@ export const ToNumbered = Extension.create({
                 content: contentNodeToStr(newPNode),
                 vo: { ...(oldData.vo ?? {}), number },
               });
-              tx.setSelection({
+              tx.setViewParams({
                 viewId: appView.id,
-                blockId,
-                anchor: 0, // 光标重置到开头
+                selection: { blockId, anchor: 0 }, // 光标重置到开头
               });
               tx.setOrigin("localEditorStructural");
             });

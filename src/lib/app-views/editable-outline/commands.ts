@@ -9,19 +9,19 @@ import {
   findCurrListItem,
   findListItemAtPos,
   getSelectedListItemInfo,
-} from "@/lib/tiptap/utils";
+} from "@/lib/common/utils/tiptap";
 import type { Editor as TiptapEditor } from "@tiptap/core";
 import { Fragment, Node, Schema } from "@tiptap/pm/model";
 import { NodeSelection, TextSelection, type Command } from "@tiptap/pm/state";
 import type { AttachmentTaskInfo } from "../../app/attachment/storage";
+import type { NumberFormat } from "@/lib/common/utils/numbering";
 import type {
   BlockDataInner,
   BlockId,
   BlockNode,
-  NumberFormat,
-  SelectionInfo,
-  ViewOptions,
-} from "../../common/types";
+} from "@/lib/common/types/block";
+import type { ViewOptions } from "@/lib/common/types/block";
+import type { ViewParams } from "@/lib/common/types/app-view";
 import { Codeblock } from "../../tiptap/nodes/codeblock";
 import {
   File,
@@ -37,9 +37,9 @@ import {
   buildBlockRefStr,
   contentNodeToStr,
   str2ContentNode,
-} from "../../tiptap/utils";
-import type { AppViewId } from "../types";
-import { extractBlockRefs } from "@/lib/app/util";
+} from "../../common/utils/tiptap";
+import type { AppViewId } from "@/lib/common/types/app-view";
+import { extractBlockRefs } from "@/lib/common/utils/tiptap";
 import { EditableOutlineView } from "./editable-outline";
 
 function inheritVo(vo?: ViewOptions): ViewOptions | undefined {
@@ -89,7 +89,10 @@ export function promoteSelected(editor: TiptapEditor): Command {
 
       // 缩进后，光标位置仍然保持在当前块的相同位置
       const anchor = state.selection.from - (pos + 2);
-      tx.setSelection({ viewId: appview.id, blockId, anchor });
+      tx.setViewParams({
+        viewId: appview.id,
+        selection: { blockId, anchor },
+      });
       tx.setOrigin("localEditorStructural");
     });
     return true;
@@ -118,7 +121,10 @@ export function demoteSelected(editor: TiptapEditor): Command {
 
       // 缩进后，光标位置仍然保持在当前块的相同位置
       const anchor = state.selection.from - (pos + 2);
-      tx.setSelection({ viewId: appview.id, blockId, anchor });
+      tx.setViewParams({
+        viewId: appview.id,
+        selection: { blockId, anchor },
+      });
       tx.setOrigin("localEditorStructural");
     });
     return true;
@@ -157,10 +163,9 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
           vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
-        tx.setSelection({
+        tx.setViewParams({
           viewId: appview.id,
-          blockId: newBlockId,
-          anchor: 0,
+          selection: { blockId: newBlockId, anchor: 0 },
         });
         tx.setOrigin("localEditorStructural");
       });
@@ -175,10 +180,9 @@ export function splitListItemSpecial(editor: TiptapEditor): Command {
           vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
-        tx.setSelection({
+        tx.setViewParams({
           viewId: appview.id,
-          blockId: newBlockId,
-          anchor: 0,
+          selection: { blockId: newBlockId, anchor: 0 },
         });
         tx.setOrigin("localEditorStructural");
       });
@@ -265,10 +269,9 @@ export function addFirstChild(
           folded: false,
           content: newContent,
         });
-        tx.setSelection({
+        tx.setViewParams({
           viewId: appview.id,
-          blockId: newBlockId,
-          anchor: 0,
+          selection: { blockId: newBlockId, anchor: 0 },
         });
         tx.setOrigin("localEditorStructural");
       });
@@ -314,10 +317,9 @@ export function splitListItemText(editor: TiptapEditor): Command {
           vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块
-        tx.setSelection({
+        tx.setViewParams({
           viewId: appview.id,
-          blockId: newBlockId,
-          anchor: 0,
+          selection: { blockId: newBlockId, anchor: 0 },
         });
         tx.setOrigin("localEditorStructural");
       });
@@ -336,10 +338,9 @@ export function splitListItemText(editor: TiptapEditor): Command {
           vo: inheritVo(currBlockData.vo),
         });
         // 要求聚焦到新块开头
-        tx.setSelection({
+        tx.setViewParams({
           viewId: appview.id,
-          blockId: newBlockId,
-          anchor: 0,
+          selection: { blockId: newBlockId, anchor: 0 },
         });
         tx.setOrigin("localEditorStructural");
       });
@@ -379,7 +380,6 @@ export function deleteEmptyListItem(
 
     // 确定删除后要聚焦的块 - 直接在 ProseMirror 文档中查找
     let focusTarget: {
-      viewId: AppViewId;
       blockId: BlockId;
       anchor: number;
     } | null = null;
@@ -400,7 +400,6 @@ export function deleteEmptyListItem(
         if (nextListItem) {
           const nextBlockId = nextListItem.attrs.blockId as BlockId;
           focusTarget = {
-            viewId: appview.id,
             blockId: nextBlockId,
             anchor: 0,
           };
@@ -424,7 +423,6 @@ export function deleteEmptyListItem(
             const prevBlockNodeJson = JSON.parse(prevBlockData.content);
             const prevBlockNode = state.schema.nodeFromJSON(prevBlockNodeJson);
             focusTarget = {
-              viewId: appview.id,
               blockId: prevBlockId,
               anchor: prevBlockNode.nodeSize,
             };
@@ -435,18 +433,22 @@ export function deleteEmptyListItem(
 
     // 如果这是编辑器中唯一的根块，则不删除
     if (!focusTarget) return false;
-
     if (!dispatch) return true;
+
+    const viewParams: ViewParams = {
+      viewId: appview.id,
+      selection: focusTarget,
+    };
 
     if (confirm) {
       const dialogs = useDialogs(appview.app);
-      dialogs.openDeleteBlockConfirm(blockId, focusTarget);
+      dialogs.openDeleteBlockConfirm(blockId, viewParams);
       return true;
     }
 
     appview.app.withTx((tx) => {
       tx.deleteBlock(blockId);
-      tx.setSelection(focusTarget);
+      tx.setViewParams(viewParams);
       tx.setOrigin("localEditorStructural");
     });
 
@@ -743,10 +745,12 @@ export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
         // 2. 设置光标位置到当前块开头
         const selection = {
           viewId: appview.id,
-          blockId: currentBlockId,
-          anchor: 0,
+          selection: {
+            blockId: currentBlockId,
+            anchor: 0,
+          },
         };
-        tx.setSelection(selection);
+        tx.setViewParams(selection);
         tx.setOrigin("localEditorStructural");
       });
     } else {
@@ -781,10 +785,12 @@ export function mergeWithPreviousBlock(editor: TiptapEditor): Command {
         // 3. 设置光标位置
         const selection = {
           viewId: appview.id,
-          blockId: prevBlockId,
-          anchor: mergePoint,
+          selection: {
+            blockId: prevBlockId,
+            anchor: mergePoint,
+          },
         };
-        tx.setSelection(selection);
+        tx.setViewParams(selection);
         tx.setOrigin("localEditorStructural");
       });
     }
@@ -1544,7 +1550,7 @@ export function convertToSearchBlock(
 export function recursiveDeleteBlock(
   editor: TiptapEditor,
   blockId: BlockId,
-  selection?: SelectionInfo
+  selection?: ViewParams
 ): Command {
   return function () {
     const { appView: appview } = editor;
@@ -1555,7 +1561,7 @@ export function recursiveDeleteBlock(
         tx.deleteBlock(descendants[i]!);
       }
       tx.setOrigin("localEditorStructural");
-      selection && tx.setSelection(selection);
+      selection && tx.setViewParams(selection);
     });
     return true;
   };
@@ -1780,11 +1786,9 @@ export function convertToTagBlock(
         folded: true,
       });
       tx.setOrigin("localEditorStructural");
-      tx.setSelection({
+      tx.setViewParams({
         viewId: editor.appView.id,
-        blockId: targetBlockId,
-        anchor: 0,
-        head: 0,
+        selection: { blockId: targetBlockId, anchor: 0 },
         scrollIntoView: true,
       });
     });
@@ -1946,12 +1950,11 @@ export function zoomin(editor: TiptapEditor, blockId?: BlockId): Command {
         rootBlockIds,
       });
       appView.setRootBlockIds([listItem.blockId]);
-      tx.setSelection({
+      tx.setViewParams({
         viewId: editor.appView.id,
         // 如果有孩子，聚焦到第一个孩子开头
         // 否则聚焦到这个块开头
-        blockId: children[0] ?? listItem.blockId,
-        anchor: 0,
+        selection: { blockId: children[0] ?? listItem.blockId, anchor: 0 },
       });
       tx.setOrigin("localEditorStructural");
     });
@@ -1972,10 +1975,9 @@ export function zoomout(editor: TiptapEditor): Command {
       const top = st.pop()!;
       appView.app.withTx((tx) => {
         appView.setRootBlockIds(top.rootBlockIds);
-        tx.setSelection({
+        tx.setViewParams({
           viewId: editor.appView.id,
-          blockId: top.blockId,
-          anchor: top.anchor,
+          selection: { blockId: top.blockId, anchor: top.anchor },
           scrollIntoView: true,
           highlight: true,
         });
@@ -1998,10 +2000,9 @@ export function zoomout(editor: TiptapEditor): Command {
           appView.setRootBlockIds([]);
         }
         if (parentId) {
-          tx.setSelection({
+          tx.setViewParams({
             viewId: editor.appView.id,
-            blockId: parentId,
-            anchor: 0,
+            selection: { blockId: parentId, anchor: 0 },
           });
         }
         tx.setOrigin("localEditorStructural");

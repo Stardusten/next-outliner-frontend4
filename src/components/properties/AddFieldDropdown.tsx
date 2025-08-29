@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FieldSchema } from "@/lib/common/types";
+import { FieldSchema } from "@/lib/common/types/block-field";
 
 export type TagSuggestion = {
   tagId: string;

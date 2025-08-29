@@ -2,10 +2,10 @@ import { useI18n } from "@/composables/useI18n";
 import { setTagsOfCurrBlock } from "@/lib/app-views/editable-outline/commands";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 import { App } from "@/lib/app/app";
-import { extractBlockRefs } from "@/lib/app/util";
-import { createSimpleKeydownHandler } from "@/lib/common/keybinding";
-import { BlockId } from "@/lib/common/types";
-import { mac } from "@/lib/utils";
+import { extractBlockRefs } from "@/lib/common/utils/tiptap";
+import { createSimpleKeydownHandler } from "@/lib/common/utils/keybinding";
+import { BlockId } from "@/lib/common/types/block";
+import { mac } from "@/lib/common/utils/platform";
 import { ReactiveSet } from "@solid-primitives/set";
 import { Check, Loader2, WandSparkles } from "lucide-solid";
 import {

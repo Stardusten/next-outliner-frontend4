@@ -1,4 +1,4 @@
-import type { BlockId } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
 import { createSignal, type Accessor, type Setter } from "solid-js";
 import type { AppStep4 } from "../app";
 

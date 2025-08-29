@@ -4,8 +4,9 @@ import {
 } from "@/lib/app-views/editable-outline/editable-outline";
 import type { App } from "@/lib/app/app";
 import { calcMatchScore, hybridTokenize } from "@/lib/app/index/tokenize";
-import { extractBlockRefs } from "@/lib/app/util";
-import type { BlockDataInner, BlockId, BlockNode } from "@/lib/common/types";
+import { extractBlockRefs } from "@/lib/common/utils/tiptap";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId, BlockNode } from "@/lib/common/types/block";
 import { executeCompletion } from "@/lib/tiptap/functionalities/block-ref-completion";
 
 export function useBlockRefCompletion(app: App) {

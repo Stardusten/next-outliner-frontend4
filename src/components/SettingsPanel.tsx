@@ -31,7 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Plus, AlertTriangle, CircleCheck } from "lucide-solid";
-import { checkFontAvailability, COMMON_FONTS } from "@/lib/common/font-utils";
+import { checkFontAvailability, COMMON_FONTS } from "@/lib/common/utils/font";
 import { useSettings } from "@/composables/useSettings";
 import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import type {
@@ -132,17 +132,17 @@ export const SettingsPanel = (props: { app: App }) => {
             <Show when={currentPageConfig() && currentRepo()}>
               <For each={currentPageConfig()!.groups}>
                 {(group) => (
-                  <Show when={(() => {
-                    const cfg = currentRepo();
-                    if (!cfg) return false;
-                    return group.settings.some((s) =>
-                      evaluateCondition(s.condition, cfg)
-                    );
-                  })()}>
+                  <Show
+                    when={(() => {
+                      const cfg = currentRepo();
+                      if (!cfg) return false;
+                      return group.settings.some((s) =>
+                        evaluateCondition(s.condition, cfg)
+                      );
+                    })()}
+                  >
                     <div class="flex flex-col gap-4">
-                      <h3 class="text-lg font-semibold mb-2">
-                        {group.title}
-                      </h3>
+                      <h3 class="text-lg font-semibold mb-2">{group.title}</h3>
                       <Show when={group.description}>
                         <p class="text-sm text-muted-foreground mt-[-.5em] mb-2 whitespace-pre-wrap">
                           {group.description}
@@ -151,11 +151,13 @@ export const SettingsPanel = (props: { app: App }) => {
 
                       <For each={group.settings}>
                         {(setting) => (
-                          <Show when={(() => {
-                            const cfg = currentRepo();
-                            if (!cfg) return false;
-                            return evaluateCondition(setting.condition, cfg);
-                          })()}>
+                          <Show
+                            when={(() => {
+                              const cfg = currentRepo();
+                              if (!cfg) return false;
+                              return evaluateCondition(setting.condition, cfg);
+                            })()}
+                          >
                             <div class="flex flex-col">
                               <Show
                                 when={

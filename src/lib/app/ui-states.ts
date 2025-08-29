@@ -1,5 +1,6 @@
 import { MenuItem } from "@/composables/useContextMenu";
-import { BlockId, BlockNode, SelectionInfo } from "../common/types";
+import { BlockId, BlockNode } from "../common/types/block";
+import { ViewParams } from "../common/types/app-view";
 import { AppStep12 } from "./app";
 import { createSignal, Signal } from "solid-js";
 import { PendingImport } from "@/composables/useImportExport";
@@ -20,7 +21,7 @@ export function initUiStates(app: AppStep12) {
     deleteBlockConfirm: {
       openSignal: createSignal(false),
       blockId: null as BlockId | null,
-      selection: undefined as SelectionInfo | undefined,
+      viewParams: undefined as ViewParams | undefined,
     },
     imageRename: {
       openSignal: createSignal(false),

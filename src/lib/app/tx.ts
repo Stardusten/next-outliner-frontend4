@@ -1,7 +1,10 @@
 import { EditableOutlineView } from "../app-views/editable-outline/editable-outline";
-import { AsyncTaskQueue } from "../common/taskQueue";
-import type { BlockDataInner, BlockId, SelectionInfo } from "../common/types";
+import { AsyncTaskQueue } from "../common/utils/taskQueue";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId } from "../common/types/block";
+import type { ViewParams } from "../common/types/app-view";
 import type { AppStep10 } from "./app";
+import { applyIdMappingToViewParams } from "../common/utils/view-params";
 
 export type TxExecutedOperation =
   | {
@@ -59,8 +62,8 @@ export type TxOpParams =
 
 export type TxMeta = {
   origin: string;
-  beforeSelection?: SelectionInfo;
-  selection?: SelectionInfo;
+  beforeViewParams?: ViewParams;
+  viewParams?: ViewParams;
 };
 
 export type TxStatus =
@@ -87,8 +90,8 @@ export type TxObj = {
   deleteBlock: (blockId: BlockId) => void;
   moveBlock: (blockId: BlockId, parent: BlockId | null, index: number) => void;
   updateBlock: (blockId: BlockId, newData: Partial<BlockDataInner>) => void;
-  setBeforeSelection: (selection: SelectionInfo) => void;
-  setSelection: (selection: SelectionInfo) => void;
+  setBeforeViewParams: (viewParams: ViewParams) => void;
+  setViewParams: (viewParams: ViewParams) => void;
   setOrigin: (origin: string) => void;
   getIndex: (blockId: BlockId) => number | null;
   getChildrenIds: (blockId: BlockId | null) => BlockId[];
@@ -112,7 +115,7 @@ export function initTransactionManager(app: AppStep10) {
   const txQueue = new AsyncTaskQueue();
   const ret = Object.assign(app, {
     txQueue,
-    withTx: (fn: (tx: TxObj) => void, options?: WithTxOptions) => 
+    withTx: (fn: (tx: TxObj) => void, options?: WithTxOptions) =>
       withTx(ret, fn, options),
   });
   return ret;
@@ -211,18 +214,18 @@ function execTx(
     throw new Error(`Transaction already ${tx.status}`);
   tx.status = "pending";
 
-  // 如果没有指定 beforeSelection，则记录当前选区到 meta.beforeSelection
+  // 如果没有指定 beforeViewParams，则记录当前选区到 meta.beforeViewParams
   const editor = app.getLastFocusedAppView();
   const sel =
-    editor instanceof EditableOutlineView ? editor.getSelectionInfo() : null;
+    editor instanceof EditableOutlineView ? editor.getViewParams() : null;
 
-  if (!tx.meta.beforeSelection) {
-    sel && (tx.meta.beforeSelection = sel);
+  if (!tx.meta.beforeViewParams) {
+    sel && (tx.meta.beforeViewParams = sel);
   }
 
   // 如果没有指定 selection，则记录当前选区到 meta.selection（保持选区不变）
-  if (!tx.meta.selection) {
-    sel && (tx.meta.selection = sel);
+  if (!tx.meta.viewParams) {
+    sel && (tx.meta.viewParams = sel);
   }
 
   try {
@@ -315,22 +318,19 @@ function execTx(
     app.doc.commit({ origin: tx.meta.origin });
 
     // 对 selection 应用 idMapping
-    if (tx.meta.selection) {
-      tx.meta.selection = {
-        ...tx.meta.selection,
-        blockId:
-          idMapping[tx.meta.selection.blockId] ?? tx.meta.selection.blockId,
-      };
+    if (tx.meta.viewParams) {
+      tx.meta.viewParams = applyIdMappingToViewParams(
+        idMapping,
+        tx.meta.viewParams
+      );
     }
 
-    // 对 beforeSelection 应用 idMapping
-    if (tx.meta.beforeSelection) {
-      tx.meta.beforeSelection = {
-        ...tx.meta.beforeSelection,
-        blockId:
-          idMapping[tx.meta.beforeSelection.blockId] ??
-          tx.meta.beforeSelection.blockId,
-      };
+    // 对 beforeViewParams 应用 idMapping
+    if (tx.meta.beforeViewParams) {
+      tx.meta.beforeViewParams = applyIdMappingToViewParams(
+        idMapping,
+        tx.meta.beforeViewParams
+      );
     }
 
     // 发送事务完成事件
@@ -510,13 +510,13 @@ export interface WithTxOptions {
  * @param options 可选的防抖配置
  */
 export async function withTx(
-  app: AppWithTx, 
+  app: AppWithTx,
   fn: (tx: TxObj) => void,
   options: WithTxOptions = {}
 ) {
   const { debounceKey, debounceDelay } = options;
   const idMapping: Record<BlockId, BlockId> = {};
-  
+
   await app.txQueue.queueTaskAndWait(
     () => {
       const txObj = createTxObj(app);
@@ -528,7 +528,7 @@ export async function withTx(
       delay: debounceDelay,
     }
   );
-  
+
   return { idMapping };
 }
 
@@ -549,8 +549,9 @@ function createTxObj(app: AppWithTx): TxObj & { _tx: Transaction } {
     moveBlock: (blockId, parent, index) =>
       addMoveOpToTx(tx, blockId, parent, index),
     updateBlock: (blockId, newData) => addUpdateOpToTx(tx, blockId, newData),
-    setBeforeSelection: (selection) => (tx.meta.beforeSelection = selection),
-    setSelection: (selection) => (tx.meta.selection = selection),
+    setBeforeViewParams: (viewParams) =>
+      (tx.meta.beforeViewParams = viewParams),
+    setViewParams: (viewParams) => (tx.meta.viewParams = viewParams),
     setOrigin: (origin) => (tx.meta.origin = origin),
     getBlockData: (blockId) => getBlockDataFromTx(app, tx, blockId),
     getParentId: (blockId) => getParentIdFromTx(app, tx, blockId),

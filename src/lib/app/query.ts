@@ -1,5 +1,5 @@
 import { LoroTreeNode } from "loro-crdt";
-import type { BlockId, BlockNode } from "../common/types";
+import type { BlockId, BlockNode } from "../common/types/block";
 import type { App } from "./app";
 
 export function execQuery(app: App, query: string): BlockNode[] | Error {

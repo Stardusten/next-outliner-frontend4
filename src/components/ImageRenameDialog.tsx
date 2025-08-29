@@ -13,7 +13,7 @@ import { Button } from "./ui/button";
 import { TextField, TextFieldInput } from "./ui/text-field";
 import { createEffect, createMemo, createSignal, Show } from "solid-js";
 import type { App } from "@/lib/app/app";
-import { createSimpleKeydownHandler } from "@/lib/common/keybinding";
+import { createSimpleKeydownHandler } from "@/lib/common/utils/keybinding";
 import { isExtensionChanged } from "@/lib/tiptap/nodes/file";
 
 interface ImageRenameDialogProps {

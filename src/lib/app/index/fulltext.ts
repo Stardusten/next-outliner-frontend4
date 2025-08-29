@@ -1,6 +1,6 @@
 // @ts-ignore
 import Document from "@/../node_modules/flexsearch/dist/module/document";
-import type { BlockId, BlockNode } from "@/lib/common/types";
+import type { BlockId, BlockNode } from "@/lib/common/types/block";
 import type { AppStep5 } from "../app";
 import { calcMatchScore, hybridTokenize } from "./tokenize";
 

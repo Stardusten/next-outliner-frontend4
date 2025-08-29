@@ -5,7 +5,7 @@ import * as CheckboxPrimitive from "@kobalte/core/checkbox";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
 import { Check } from "lucide-solid";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/common/utils/tailwindcss";
 
 type CheckboxRootProps<T extends ValidComponent = "div"> =
   CheckboxPrimitive.CheckboxRootProps<T> & { class?: string | undefined };

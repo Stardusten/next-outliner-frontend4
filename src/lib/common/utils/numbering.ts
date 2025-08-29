@@ -1,5 +1,3 @@
-import { NumberFormat } from "./types";
-
 // 阿拉伯数字加点，如 1. 2. 3.
 const numberSuccessors_1dot = {
   "1.": "2.",
@@ -222,3 +220,21 @@ export function nextNumber(
   if (curr == null) return successors[format] ?? null;
   return successors[curr] ?? null;
 }
+export const numberFormats = [
+  "1.",
+  "1)",
+  "(1)",
+  "a.",
+  "a)",
+  "(a)",
+  "I.",
+  "I)",
+  "(I)",
+  "i.",
+  "i)",
+  "(i)",
+  "一、",
+  "(一)",
+] as const;
+
+export type NumberFormat = (typeof numberFormats)[number];

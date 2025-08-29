@@ -1,12 +1,13 @@
 import type { App } from "@/lib/app/app";
 import { getBlockNode } from "@/lib/app/block-manage";
-import type { BlockDataInner, BlockId, BlockNode } from "@/lib/common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId, BlockNode } from "@/lib/common/types/block";
 import { schemaExts } from "@/lib/tiptap/schema";
 import { Editor as TiptapEditor } from "@tiptap/core";
 import { nanoid } from "nanoid";
 import { FastListItem } from "../../tiptap/nodes/fast-list-item";
 import { HighlightMatches } from "../../tiptap/functionalities/highlight-matches";
-import type { AppView, AppViewId } from "../types";
+import type { AppView, AppViewId } from "@/lib/common/types/app-view";
 import { HighlightCodeblock } from "@/lib/tiptap/functionalities/highlight-codeblock";
 
 export class ReadonlyBlockView implements AppView {

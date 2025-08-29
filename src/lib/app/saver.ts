@@ -1,6 +1,6 @@
-import type { BlocksVersion } from "../common/types";
+import type { BlocksVersion } from "../common/types/block";
 import type { AppStep7 } from "./app";
-import { DebouncedTimer } from "@/lib/common/debounced";
+import { DebouncedTimer } from "@/lib/common/utils/debounced";
 
 const saveDelay = 500; // 500ms
 const saveMaxDelay = 5000; // 最长 5s

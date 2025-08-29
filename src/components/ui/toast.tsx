@@ -8,7 +8,7 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import { CheckCircle, XCircle, AlertCircle, AlertTriangle } from "lucide-solid";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/common/utils/tailwindcss";
 
 const toastVariants = cva(
   "group pointer-events-auto relative flex w-full items-center justify-between space-x-3 overflow-hidden rounded-md border p-4 pr-10 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--kb-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--kb-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[opened]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[opened]:fade-in-0 data-[closed]:zoom-out-95 data-[opened]:zoom-in-95 data-[opened]:slide-in-from-right-2 data-[closed]:slide-out-to-right-2 data-[swipe=end]:animate-out",

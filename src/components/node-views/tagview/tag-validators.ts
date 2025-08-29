@@ -1,5 +1,5 @@
-import type { BlockId } from "@/lib/common/types";
-import type { FieldSchema } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
+import type { FieldSchema } from "@/lib/common/types/block-field";
 
 export function parseInheritsInput(
   input: string

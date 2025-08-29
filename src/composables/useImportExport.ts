@@ -1,13 +1,9 @@
 import type { App } from "@/lib/app/app";
 import { forceSave } from "@/lib/app/saver";
 import { withTx } from "@/lib/app/tx";
-import type {
-  BlockDataInner,
-  BlockId,
-  BlockNode,
-  BlockType,
-  ViewOptions,
-} from "@/lib/common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId, BlockNode, BlockType } from "@/lib/common/types/block";
+import type { ViewOptions } from "@/lib/common/types/block";
 import { BLOCKS_TREE_NAME } from "@/lib/persistence/local-storage";
 import { LoroDoc } from "loro-crdt";
 import { Fragment, type Node } from "@tiptap/pm/model";

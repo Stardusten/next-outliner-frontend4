@@ -3,9 +3,9 @@ import type { TxExecutedOperation } from "@/lib/app/tx";
 import { Node } from "@tiptap/pm/model";
 import type { EditableOutlineView } from "../editable-outline";
 import { FullRenderer } from "./full";
-import { RenderOptions } from "./types";
+import { RenderOptions } from "@/lib/common/types/app-view";
 import { Transaction } from "@tiptap/pm/state";
-import { findBlockPosition } from "@/lib/tiptap/utils";
+import { findBlockPosition } from "@/lib/common/utils/tiptap";
 
 // 增量渲染器
 export class Patcher {

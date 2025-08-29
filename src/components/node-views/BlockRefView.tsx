@@ -1,7 +1,7 @@
 import { useContextMenu } from "@/composables/useContextMenu";
 import { useI18n } from "@/composables/useI18n";
-import { clipboard } from "@/lib/common/clipboard";
-import { BlockId } from "@/lib/common/types";
+import { clipboard } from "@/lib/common/utils/clipboard";
+import { BlockId } from "@/lib/common/types/block";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
 import { Decoration, NodeView, ViewMutationRecord } from "@tiptap/pm/view";
 import { AtSign, Link } from "lucide-solid";

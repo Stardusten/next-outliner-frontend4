@@ -107,7 +107,7 @@ export class AsyncTaskQueue {
     if (key && key != "null") {
       const idx = this.queue.findIndex((item) => item.key == key);
       if (idx !== -1) {
-        const task = this.queue[idx];
+        const task = this.queue[idx]!;
         task.canceller && task.canceller();
         this.queue.splice(idx, 1);
         mergedTasks.push(...task.awareness.mergedTasks);

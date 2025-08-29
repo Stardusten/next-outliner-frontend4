@@ -38,7 +38,7 @@ import {
   zoomin,
   zoomout,
 } from "../../../app-views/editable-outline/commands";
-import { findCurrListItem } from "../../utils";
+import { findCurrListItem } from "../../../common/utils/tiptap";
 
 export const NormalKeymap = Extension.create({
   name: "normalKeymap",

@@ -1,5 +1,5 @@
 import { base, keyName } from "w3c-keyname";
-import { mac } from "../utils";
+import { mac } from "./platform";
 
 function normalizeKeyName(name: string) {
   // eslint-disable-next-line prefer-const

@@ -1,5 +1,5 @@
 import { EditableOutlineView } from "../app-views/editable-outline/editable-outline";
-import type { AppView, AppViewId } from "../app-views/types";
+import type { AppView, AppViewId } from "../common/types/app-view";
 import type { AppStep9 } from "./app";
 
 export function initAppViews(app: AppStep9) {

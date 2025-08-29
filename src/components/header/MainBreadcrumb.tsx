@@ -1,7 +1,7 @@
 import { For, createMemo, createSignal, onMount } from "solid-js";
 import { useBreadcrumb } from "@/composables/useBreadcrumb";
 import { App } from "@/lib/app/app";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/common/utils/tailwindcss";
 import {
   DropdownMenu,
   DropdownMenuContent,

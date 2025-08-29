@@ -1,6 +1,7 @@
-import type { BlockDataInner, BlockNode } from "@/lib/common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockNode } from "@/lib/common/types/block";
 import { Node, Schema } from "@tiptap/pm/model";
-import { RenderOptions } from "./types";
+import { RenderOptions } from "@/lib/common/types/app-view";
 import { EditableOutlineView } from "../editable-outline";
 import { execQuery } from "@/lib/app/query";
 

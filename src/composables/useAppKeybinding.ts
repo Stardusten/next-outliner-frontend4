@@ -1,4 +1,4 @@
-import { createSimpleKeydownHandler } from "@/lib/common/keybinding";
+import { createSimpleKeydownHandler } from "@/lib/common/utils/keybinding";
 import { useSearch } from "./useSearch";
 import { App } from "@/lib/app/app";
 

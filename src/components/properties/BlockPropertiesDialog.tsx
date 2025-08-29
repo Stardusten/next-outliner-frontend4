@@ -10,13 +10,13 @@ import {
 import { TextField } from "@/components/ui/text-field";
 import { useI18n } from "@/composables/useI18n";
 import { App } from "@/lib/app/app";
-import { extractBlockRefs } from "@/lib/app/util";
+import { extractBlockRefs } from "@/lib/common/utils/tiptap";
+import { BlockId } from "@/lib/common/types/block";
 import {
-  BlockId,
   CustomField,
   FieldSchema,
   TagField,
-} from "@/lib/common/types";
+} from "@/lib/common/types/block-field";
 import { Settings } from "lucide-solid";
 import { nanoid } from "nanoid";
 import { createEffect, createSignal, For, Match, Show, Switch } from "solid-js";

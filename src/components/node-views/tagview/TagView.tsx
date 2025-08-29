@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useI18n } from "@/composables/useI18n";
 import { useDialogs } from "@/composables/useDialogs";
-import type { BlockId } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
 import type { TagAttrs } from "@/lib/tiptap/nodes/tag";
 import type {
   Editor,

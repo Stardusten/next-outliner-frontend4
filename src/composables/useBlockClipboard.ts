@@ -1,5 +1,5 @@
 import type { App } from "@/lib/app/app";
-import type { BlockId, BlockNode } from "@/lib/common/types";
+import type { BlockId, BlockNode } from "@/lib/common/types/block";
 import {
   moveBlockTo,
   moveBlocksTo,

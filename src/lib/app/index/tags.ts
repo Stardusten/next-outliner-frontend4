@@ -1,6 +1,7 @@
 import { createSignal, Signal } from "solid-js";
 import { AppStep13 } from "../app";
-import { BlockDataInner, BlockId, BlockNode } from "@/lib/common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import { BlockId, BlockNode } from "@/lib/common/types/block";
 import { ReactiveMap } from "@solid-primitives/map";
 import { TagAttrs } from "@/lib/tiptap/nodes/tag";
 import { calcMatchScore, hybridTokenize } from "./tokenize";

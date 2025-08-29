@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { inputRules, InputRule } from "@tiptap/pm/inputrules";
 import { TextSelection } from "@tiptap/pm/state";
-import { findCurrListItem } from "../utils";
+import { findCurrListItem } from "../../common/utils/tiptap";
 
 const TO_CODEBLOCK = "to-codeblock";
 

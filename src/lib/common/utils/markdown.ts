@@ -1,6 +1,5 @@
-import type { App } from "../app/app";
-import { getBlockNode } from "../app/block-manage";
-import type { BlockId, BlockNode } from "./types";
+import type { App } from "../../app/app";
+import type { BlockId, BlockNode } from "../types/block";
 
 export function toMarkdown(app: App, rootBlockIds: BlockId[]): string {
   const recur = (rootBlockNode: BlockNode, level: number) => {
@@ -15,7 +14,7 @@ export function toMarkdown(app: App, rootBlockIds: BlockId[]): string {
 
   const lines: string[] = [];
   for (const rootBlockId of rootBlockIds) {
-    const rootBlockNode = getBlockNode(app, rootBlockId);
+    const rootBlockNode = app.getBlockNode(rootBlockId);
     if (rootBlockNode == null) {
       throw new Error("Block not found: " + rootBlockId);
     }

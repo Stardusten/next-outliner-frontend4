@@ -1,5 +1,6 @@
 import { App } from "@/lib/app/app";
-import { BlockId, SelectionInfo } from "@/lib/common/types";
+import { BlockId } from "@/lib/common/types/block";
+import { ViewParams } from "@/lib/common/types/app-view";
 import type { Node } from "@tiptap/pm/model";
 import { batch } from "solid-js";
 import type { TagAttrs } from "@/lib/tiptap/nodes/tag";
@@ -12,12 +13,12 @@ export const useDialogs = (app: App) => {
 
   const openDeleteBlockConfirm = (
     blockId: BlockId,
-    selection?: SelectionInfo
+    viewParams?: ViewParams
   ) => {
     batch(() => {
       _deleteBlockConfirm.openSignal[1](true);
       _deleteBlockConfirm.blockId = blockId;
-      _deleteBlockConfirm.selection = selection;
+      _deleteBlockConfirm.viewParams = viewParams;
     });
   };
 

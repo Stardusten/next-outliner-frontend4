@@ -25,8 +25,8 @@ import { Switch, SwitchControl, SwitchThumb } from "@/components/ui/switch";
 import { useI18n } from "@/composables/useI18n";
 import { Pencil, RefreshCcw, Settings } from "lucide-solid";
 import { updateSarchBlockAttrs } from "@/lib/app-views/editable-outline/commands";
-import type { BlockId } from "@/lib/common/types";
-import { isDescendantOf } from "@/lib/utils";
+import type { BlockId } from "@/lib/common/types/block";
+import { isDescendantOf } from "@/lib/common/utils/dom";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 type ViewProps = {

@@ -1,11 +1,8 @@
 import type { Frontiers } from "loro-crdt";
 import { createRoot, createSignal, Signal, type Accessor } from "solid-js";
-import type {
-  BlockData,
-  BlockDataInner,
-  BlockId,
-  BlockNode,
-} from "../common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId, BlockNode } from "../common/types/block";
+import type { BlockData } from "../common/types/block";
 import type { App, AppStep2 } from "./app";
 
 type EnhancedBlockNode = BlockNode & {

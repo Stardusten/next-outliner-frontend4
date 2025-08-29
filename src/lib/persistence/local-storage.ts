@@ -1,7 +1,7 @@
-import { contentNodeToStrAndType } from "@/lib/tiptap/utils";
+import { contentNodeToStrAndType } from "@/lib/common/utils/tiptap";
 import { LoroDoc, type LoroTree } from "loro-crdt";
 import { nanoid } from "nanoid";
-import { base64ToUint8Array, uint8ArrayToBase64 } from "../app/util";
+import { base64ToUint8Array, uint8ArrayToBase64 } from "../common/utils/bytes";
 import { detachedSchema } from "../tiptap/schema";
 import type { Persistence } from "./persistence";
 

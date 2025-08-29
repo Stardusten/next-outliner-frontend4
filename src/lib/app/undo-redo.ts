@@ -1,11 +1,12 @@
-import type { BlockId, SelectionInfo } from "../common/types";
+import type { BlockId } from "../common/types/block";
+import type { ViewParams } from "../common/types/app-view";
 import type { AppStep11 } from "./app";
 import type { TxExecutedOperation } from "./tx";
 
 export type UndoRedoItem = {
   executedOps: TxExecutedOperation[];
-  beforeSelection?: SelectionInfo;
-  afterSelection?: SelectionInfo;
+  beforeSelection?: ViewParams;
+  afterSelection?: ViewParams;
 };
 
 export function initUndoRedoManager(app: AppStep11) {
@@ -20,8 +21,8 @@ export function initUndoRedoManager(app: AppStep11) {
     ret.redoStack.length = 0;
     ret.undoStack.push({
       executedOps: tx.executedOps,
-      beforeSelection: tx.meta.beforeSelection,
-      afterSelection: tx.meta.selection,
+      beforeSelection: tx.meta.beforeViewParams,
+      afterSelection: tx.meta.viewParams,
     });
   });
 

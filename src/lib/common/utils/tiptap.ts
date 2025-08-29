@@ -1,9 +1,10 @@
 import { Node, Node as ProseMirrorNode, Schema } from "@tiptap/pm/model";
-import type { BlockId, BlockType } from "../common/types";
-import { detachedSchema } from "./schema";
+import type { BlockId, BlockType } from "../types/block";
+import { detachedSchema } from "../../tiptap/schema";
 import type { EditorState } from "@tiptap/pm/state";
 import { Decoration, EditorView } from "@tiptap/pm/view";
-import { addHighlightEphemeral } from "./functionalities/highlight-ephermal";
+import { addHighlightEphemeral } from "../../tiptap/functionalities/highlight-ephermal";
+import { BlockRef } from "@/lib/tiptap/nodes/block-ref";
 
 /**
  * @param contentNode Paragraph、Codeblock 是内容节点
@@ -180,4 +181,30 @@ export function findBlockPosition(
     p += listItem.nodeSize;
   }
   return null;
+}
+/**
+ * 从 ProseMirror Node 中提取所有块引用，ProseMirror Node
+ * 可以是 list item，也可以是 paragraph node，没有限制
+ */
+
+export function extractBlockRefs(
+  node: ProseMirrorNode,
+  isTag?: boolean
+): BlockId[] {
+  const res: BlockId[] = [];
+  node.descendants((node) => {
+    if (node.type.name === BlockRef.name) {
+      if (
+        isTag === undefined ||
+        (isTag === true && node.attrs.isTag === true) ||
+        (isTag === false && node.attrs.isTag === false)
+      ) {
+        const blockId = node.attrs.blockId;
+        blockId && res.push(blockId);
+        return true;
+      }
+    }
+    return false;
+  });
+  return res;
 }

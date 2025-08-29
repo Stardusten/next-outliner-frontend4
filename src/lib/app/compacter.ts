@@ -1,4 +1,4 @@
-import { DebouncedTimer } from "@/lib/common/debounced";
+import { DebouncedTimer } from "@/lib/common/utils/debounced";
 import type { AppStep8 } from "./app";
 
 const compactDelay = 10000; // 10 秒空闲后压缩

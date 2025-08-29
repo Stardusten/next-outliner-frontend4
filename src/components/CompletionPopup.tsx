@@ -1,6 +1,6 @@
 import type { Component, JSX } from "solid-js";
 import { For, Show, createEffect, createMemo } from "solid-js";
-import type { BlockNode } from "@/lib/common/types";
+import type { BlockNode } from "@/lib/common/types/block";
 import { ReadonlyBlockView } from "@/components/ReadonlyBlockView";
 import { useBlockRefCompletion } from "@/composables/useBlockRefCompletion";
 import { Editor } from "@tiptap/core";

@@ -1,6 +1,7 @@
 import { For, Show, createSignal } from "solid-js";
 import { nanoid } from "nanoid";
-import type { FieldSchema, TagFieldOptionsMode } from "@/lib/common/types";
+import type { TagFieldOptionsMode } from "@/lib/common/types";
+import type { FieldSchema } from "@/lib/common/types/block-field";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { TextField, TextFieldInput } from "@/components/ui/text-field";

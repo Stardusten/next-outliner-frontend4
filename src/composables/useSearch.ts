@@ -1,6 +1,6 @@
 import { batch, createSignal } from "solid-js";
 import type { App } from "@/lib/app/app";
-import type { BlockNode } from "@/lib/common/types";
+import type { BlockNode } from "@/lib/common/types/block";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 import { useCurrRepoConfig } from "./useCurrRepoConfig";
 

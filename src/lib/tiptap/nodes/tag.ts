@@ -1,4 +1,5 @@
-import type { BlockId, FieldSchema } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
+import type { FieldSchema } from "@/lib/common/types/block-field";
 import { Node } from "@tiptap/core";
 import { tagViewRenderer } from "@/components/node-views/tagview/TagView";
 

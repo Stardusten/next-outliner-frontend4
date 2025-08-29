@@ -1,5 +1,5 @@
 import { App } from "@/lib/app/app";
-import { BlockId } from "@/lib/common/types";
+import { BlockId } from "@/lib/common/types/block";
 import { useLocalStorage } from "./useLocalStorage";
 
 export const useMainRoots = (app: App) => {

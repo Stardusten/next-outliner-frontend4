@@ -1,7 +1,8 @@
-import type { BlockDataInner, BlockId } from "@/lib/common/types";
+import type { BlockDataInner } from "@/lib/common/types/block";
+import type { BlockId } from "@/lib/common/types/block";
 import { createSignal, type Accessor, type Setter } from "solid-js";
 import type { AppStep3 } from "../app";
-import { extractBlockRefs } from "../util";
+import { extractBlockRefs } from "@/lib/common/utils/tiptap";
 
 type Signal<T> = [Accessor<T>, Setter<T>];
 

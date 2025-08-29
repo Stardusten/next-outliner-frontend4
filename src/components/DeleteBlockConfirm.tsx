@@ -25,7 +25,7 @@ export const DeleteBlockConfirm = (props: DeleteConfirmDialogProps) => {
 
   const cancelDelete = () => setOpen(false);
   const confirmDelete = () => {
-    const { blockId, selection } = deleteBlockConfirm;
+    const { blockId, viewParams: selection } = deleteBlockConfirm;
     if (!blockId) return;
     const tiptap = props.editor.tiptap!;
     if (tiptap.appView instanceof EditableOutlineView) {

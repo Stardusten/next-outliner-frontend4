@@ -1,5 +1,5 @@
 import { withTx } from "@/lib/app/tx";
-import type { BlockId } from "@/lib/common/types";
+import type { BlockId } from "@/lib/common/types/block";
 import { Extension } from "@tiptap/core";
 import {
   Fragment,
@@ -11,7 +11,10 @@ import {
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { nanoid } from "nanoid";
 import { isEmptyListItem } from "../../app-views/editable-outline/commands";
-import { contentNodeToStrAndType, findCurrListItem } from "../utils";
+import {
+  contentNodeToStrAndType,
+  findCurrListItem,
+} from "../../common/utils/tiptap";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
 
 // == 常量
@@ -310,10 +313,12 @@ export const PasteHtmlOrPlainText = Extension.create({
                     const lastRootJson = JSON.parse(lastRootContent);
                     const lastRootNode = schema.nodeFromJSON(lastRootJson);
                     schema;
-                    tx.setSelection({
+                    tx.setViewParams({
                       viewId: appView.id,
-                      blockId: lastRootId,
-                      anchor: lastRootNode.nodeSize,
+                      selection: {
+                        blockId: lastRootId,
+                        anchor: lastRootNode.nodeSize,
+                      },
                       scrollIntoView: true,
                     });
                   }
@@ -369,10 +374,9 @@ export const PasteHtmlOrPlainText = Extension.create({
                     tx.deleteBlock(currBlockId);
                   }
 
-                  tx.setSelection({
+                  tx.setViewParams({
                     viewId: appView.id,
-                    blockId: prevBlockId,
-                    anchor: 0,
+                    selection: { blockId: prevBlockId, anchor: 0 },
                     scrollIntoView: true,
                   });
                   tx.setOrigin("localEditorStructural");

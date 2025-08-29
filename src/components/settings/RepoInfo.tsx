@@ -2,7 +2,7 @@ import { Show } from "solid-js";
 import { useRepoConfigs } from "@/composables/useRepoConfigs";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { clipboard } from "@/lib/common/clipboard";
+import { clipboard } from "@/lib/common/utils/clipboard";
 import { showToast } from "@/components/ui/toast";
 import { useI18n } from "@/composables/useI18n";
 import { useCurrRepoConfig } from "@/composables/useCurrRepoConfig";

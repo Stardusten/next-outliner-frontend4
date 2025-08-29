@@ -1,6 +1,6 @@
 import { updateCodeblockLang } from "@/lib/app-views/editable-outline/commands";
 import { languages } from "@/lib/tiptap/functionalities/highlight-codeblock";
-import { isDescendantOf } from "@/lib/utils";
+import { isDescendantOf } from "@/lib/common/utils/dom";
 import { Editor, NodeViewRenderer, NodeViewRendererProps } from "@tiptap/core";
 import { Node } from "@tiptap/pm/model";
 import { NodeView, ViewMutationRecord } from "@tiptap/pm/view";

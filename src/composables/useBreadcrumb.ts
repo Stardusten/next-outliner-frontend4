@@ -2,7 +2,7 @@ import { App } from "@/lib/app/app";
 import { useMainRoots } from "./useMainRoots";
 import { useRepoConfigs } from "./useRepoConfigs";
 import { createMemo } from "solid-js";
-import { BlockId, BlockNode } from "@/lib/common/types";
+import { BlockId, BlockNode } from "@/lib/common/types/block";
 import {
   EditableOutlineView,
   EditableOutlineViewEvents,
