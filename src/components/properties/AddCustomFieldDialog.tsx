@@ -400,45 +400,53 @@ export const AddCustomFieldDialog = (props: {
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
       <DialogTrigger class="hidden"></DialogTrigger>
-      <DialogContent>
+      <DialogContent class="sm:max-w-[525px] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle class="flex items-center gap-2">
-            <Settings class="size-4" />
-            添加自定义字段
+          <DialogTitle class="flex items-center gap-2 py-1">
+            <Settings class="size-4 text-muted-foreground" />
+            <span>添加自定义字段</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription class="text-sm text-muted-foreground">
             自定义字段仅存在于这个块，不来自标签
           </DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-6 py-4">
+        <div class="space-y-5 py-4 flex-1 overflow-y-auto pr-2">
           {/* 字段名 */}
           <TextField class="gap-1.5">
-            <h2 class="text-sm">字段名</h2>
+            <h2 class="text-sm font-medium flex items-center">
+              <span class="text-red-500 font-medium mr-1">*</span>
+              字段名
+            </h2>
             <TextFieldInput
               value={fieldName()}
               onInput={(e) =>
                 setFieldName((e.target as HTMLInputElement).value)
               }
               placeholder="请输入字段名称"
+              class="w-full"
             />
           </TextField>
 
           {/* 字段描述 */}
           <TextField class="gap-1.5">
-            <h2 class="text-sm">字段描述 (可选)</h2>
+            <h2 class="text-sm font-medium">字段描述</h2>
             <TextFieldInput
               value={fieldDescription()}
               onInput={(e) =>
                 setFieldDescription((e.target as HTMLInputElement).value)
               }
               placeholder="请输入字段描述"
+              class="w-full"
             />
           </TextField>
 
           {/* 字段类型 */}
           <TextField class="gap-1.5">
-            <h2 class="text-sm">类型</h2>
+            <h2 class="text-sm font-medium flex items-center">
+              <span class="text-red-500 font-medium mr-1">*</span>
+              类型
+            </h2>
             <Select
               value={fieldSchema.type}
               onChange={(type) => updateFieldType(type ?? "text")}
@@ -468,8 +476,8 @@ export const AddCustomFieldDialog = (props: {
           </TextField>
 
           {/* 字段是否可选 */}
-          <TextField class="flex">
-            <h2 class="text-sm">可选？</h2>
+          <TextField class="flex items-center gap-2">
+            <h2 class="text-sm font-medium">可选</h2>
             <CheckboxInput
               value={fieldSchema.optional}
               onValueChange={(newVal) => updateFieldOptional(newVal)}
@@ -482,9 +490,9 @@ export const AddCustomFieldDialog = (props: {
               fieldSchema.type === "single" || fieldSchema.type === "multiple"
             }
           >
-            <div class="space-y-4">
+            <div class="space-y-4 p-3 rounded-lg border border-border/50 bg-muted/5">
               <TextField class="gap-1.5">
-                <h2 class="text-sm">选项来源</h2>
+                <h2 class="text-sm font-medium">选项来源</h2>
                 <Select
                   value={fieldSchema.options?.type || "fromTag"}
                   onChange={(type) => updateFieldOptionsType(type ?? "fromTag")}
@@ -509,13 +517,14 @@ export const AddCustomFieldDialog = (props: {
               {/* 标签选项，来源是 fromTag */}
               <Show when={fieldSchema.options?.type === "fromTag"}>
                 <TextField class="gap-1.5">
-                  <h2 class="text-sm">标签 ID</h2>
+                  <h2 class="text-sm font-medium">标签 ID</h2>
                   <TextFieldInput
                     value={fieldSchema.options?.tagId || ""}
                     placeholder="输入标签ID"
                     onInput={(e) =>
                       updateTagId((e.target as HTMLInputElement).value)
                     }
+                    class="w-full"
                   />
                   <p class="text-xs text-muted-foreground mt-1">
                     从指定标签的子标签获取选项列表
@@ -526,19 +535,23 @@ export const AddCustomFieldDialog = (props: {
               {/* 选项编辑器，来源是 manual */}
               <Show when={fieldSchema.options?.type === "manual"}>
                 <TextField class="gap-1.5">
-                  <h2 class="text-sm">选项列表</h2>
+                  <h2 class="text-sm font-medium">选项列表</h2>
 
                   {/* 选项列表 */}
-                  <div class="border rounded-md p-1 bg-muted/20 space-y-0.5">
+                  <div class="border rounded-md overflow-hidden bg-muted/10">
                     <For each={fieldSchema.options?.options || []}>
                       {(option, index) => (
-                        <div class="flex items-center justify-between gap-2 py-0.5 px-1 rounded-sm hover:bg-muted/50">
+                        <div class="flex items-center justify-between gap-2 py-0.5 px-1 hover:bg-muted/30 border-b border-border/30 last:border-b-0">
                           <Show
                             when={editingOption()?.index === index()}
-                            fallback={<div class="flex-1">{option}</div>}
+                            fallback={
+                              <div class="flex-1 px-2 py-1 text-xs">
+                                {option}
+                              </div>
+                            }
                           >
                             <TextFieldInput
-                              class="flex-1"
+                              class="flex-1 m-0.5"
                               value={editingOption()?.value || ""}
                               onInput={(e) =>
                                 setEditingOption({
@@ -549,7 +562,7 @@ export const AddCustomFieldDialog = (props: {
                             />
                           </Show>
 
-                          <div class="flex gap-0.5">
+                          <div class="flex gap-0.5 p-0.5">
                             <Show
                               when={editingOption()?.index === index()}
                               fallback={
@@ -559,7 +572,7 @@ export const AddCustomFieldDialog = (props: {
                                   onClick={() =>
                                     startEditOption(index(), option)
                                   }
-                                  class="h-7 w-7"
+                                  class="h-7 w-7 rounded-full hover:bg-muted/50"
                                 >
                                   <Edit2 class="size-3" />
                                 </Button>
@@ -569,7 +582,7 @@ export const AddCustomFieldDialog = (props: {
                                 variant="ghost"
                                 size="icon"
                                 onClick={saveEditOption}
-                                class="h-7 w-7"
+                                class="h-7 w-7 rounded-full text-green-500 hover:bg-green-500/20"
                               >
                                 <Save class="size-3" />
                               </Button>
@@ -579,7 +592,7 @@ export const AddCustomFieldDialog = (props: {
                               variant="ghost"
                               size="icon"
                               onClick={() => removeOption(index())}
-                              class="h-7 w-7"
+                              class="h-7 w-7 rounded-full hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 class="size-3" />
                             </Button>
@@ -589,9 +602,9 @@ export const AddCustomFieldDialog = (props: {
                     </For>
 
                     {/* 添加新选项 */}
-                    <div class="flex gap-1 mt-1">
+                    <div class="flex gap-0 border-t">
                       <TextFieldInput
-                        class="flex-1"
+                        class="flex-1 border-0 rounded-none rounded-bl-md"
                         value={newOption()}
                         placeholder="新选项"
                         onInput={(e) =>
@@ -602,7 +615,7 @@ export const AddCustomFieldDialog = (props: {
                       <Button
                         onClick={addOption}
                         variant="outline"
-                        class="h-8 px-2 py-0"
+                        class="rounded-none rounded-br-md h-9 border-0 bg-muted/20 hover:bg-muted/30"
                       >
                         <Plus class="size-3 mr-1" />
                         添加
@@ -615,11 +628,128 @@ export const AddCustomFieldDialog = (props: {
           </Show>
 
           {/* 字段默认值 */}
-          {renderDefaultValueInput()}
+          <div>
+            <TextField class="gap-1.5">
+              <h2 class="text-sm font-medium">
+                {/* 如果字段是必选的，那么必须有默认值 */}
+                <Show when={!!fieldSchema.optional}>
+                  <span class="text-red-500 font-medium mr-1">*</span>
+                </Show>
+                默认值
+              </h2>
+
+              <Switch>
+                <Match when={fieldSchema.type === "text"}>
+                  <TextInput
+                    value={defaultValue()}
+                    onValueChange={handleDefaultValueChange}
+                  />
+                </Match>
+                <Match when={fieldSchema.type === "number"}>
+                  <NumberInput
+                    value={defaultValue()}
+                    onValueChange={handleDefaultValueChange}
+                  />
+                </Match>
+                <Match when={fieldSchema.type === "date"}>
+                  <DateInput
+                    value={defaultValue()}
+                    onValueChange={handleDefaultValueChange}
+                  />
+                </Match>
+                <Match when={fieldSchema.type === "checkbox"}>
+                  <CheckboxInput
+                    value={!!defaultValue()}
+                    onValueChange={handleDefaultValueChange}
+                  />
+                </Match>
+                <Match
+                  when={
+                    fieldSchema.type === "single" &&
+                    fieldSchema.options?.type === "manual"
+                  }
+                >
+                  <div class="w-full">
+                    <Select
+                      value={selectedSingleOption()}
+                      onChange={(value) => setSelectedSingleOption(value || "")}
+                      options={fieldSchema.options?.options || []}
+                      itemComponent={(p) => (
+                        <SelectItem item={p.item}>{p.item.rawValue}</SelectItem>
+                      )}
+                      multiple={false}
+                      modal={true}
+                    >
+                      <SelectTrigger class="w-full">
+                        <SelectValue<string>>
+                          {(state) => state.selectedOption() || "请选择默认值"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent />
+                    </Select>
+                    <Show when={fieldSchema.options?.options?.length === 0}>
+                      <p class="text-xs text-muted-foreground mt-1">
+                        请先添加选项
+                      </p>
+                    </Show>
+                  </div>
+                </Match>
+                <Match
+                  when={
+                    fieldSchema.type === "multiple" &&
+                    fieldSchema.options?.type === "manual"
+                  }
+                >
+                  <div class="w-full space-y-2">
+                    <Show when={fieldSchema.options?.options?.length === 0}>
+                      <p class="text-xs text-muted-foreground">请先添加选项</p>
+                    </Show>
+                    <div class="space-y-1 pl-1">
+                      <For each={fieldSchema.options?.options || []}>
+                        {(option) => (
+                          <div class="flex items-center gap-2">
+                            <CheckboxInput
+                              value={selectedMultipleOptions().includes(option)}
+                              onValueChange={() => toggleMultipleOption(option)}
+                            />
+                            <span class="text-xs">{option}</span>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </div>
+                </Match>
+                <Match
+                  when={
+                    fieldSchema.type === "single" &&
+                    fieldSchema.options?.type === "fromTag"
+                  }
+                >
+                  <p class="text-xs text-muted-foreground p-1">
+                    使用标签作为来源时，无法在此设置默认值
+                  </p>
+                </Match>
+                <Match
+                  when={
+                    fieldSchema.type === "multiple" &&
+                    fieldSchema.options?.type === "fromTag"
+                  }
+                >
+                  <p class="text-xs text-muted-foreground p-1">
+                    使用标签作为来源时，无法在此设置默认值
+                  </p>
+                </Match>
+              </Switch>
+            </TextField>
+          </div>
         </div>
 
-        <DialogFooter class="mt-4 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => props.onOpenChange(false)}>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => props.onOpenChange(false)}
+            class="px-4"
+          >
             取消
           </Button>
           <Button

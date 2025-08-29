@@ -183,15 +183,15 @@ export const BlockPropertiesDialog = (props: { app: App }) => {
   return (
     <Dialog open={open()} onOpenChange={setOpen}>
       <DialogTrigger class="hidden" />
-      <DialogContent class="sm:max-w-[525px]">
+      <DialogContent class="sm:max-w-[525px] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle class="flex items-center gap-2">
-            <Settings class="size-4" />
-            块属性编辑器
+          <DialogTitle class="flex items-center gap-2 py-1">
+            <Settings class="size-4 text-muted-foreground" />
+            <span>块属性编辑器</span>
           </DialogTitle>
         </DialogHeader>
 
-        <div class="space-y-6 py-4">
+        <div class="space-y-5 py-4 flex-1 overflow-y-auto pr-2">
           <For each={Object.values(fieldInfos)}>
             {(fieldInfo) => {
               return (
@@ -257,19 +257,10 @@ export const BlockPropertiesDialog = (props: { app: App }) => {
                     </Switch>
                     <ResetButton />
                   </TextField>
-
-                  {/* <pre>{JSON.stringify(fieldInfo.value, null, 2)}</pre> */}
                 </>
               );
             }}
           </For>
-
-          <AddFieldDropdown
-            tagSuggestions={tagSuggestions()}
-            applyTagSuggestion={applyTagSuggestion}
-            addCustomField={addCustomField}
-            openAddCustomFieldDialog={() => setAddCustomFieldOpen(true)}
-          />
 
           <AddCustomFieldDialog
             open={addCustomFieldOpen()}
@@ -278,19 +269,35 @@ export const BlockPropertiesDialog = (props: { app: App }) => {
           />
         </div>
 
-        <DialogFooter class="flex justify-end gap-2 mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            取消
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => {
-              handleCommit();
-              setOpen(false);
-            }}
-          >
-            应用
-          </Button>
+        <DialogFooter>
+          <div class="w-full flex justify-between">
+            <AddFieldDropdown
+              tagSuggestions={tagSuggestions()}
+              applyTagSuggestion={applyTagSuggestion}
+              addCustomField={addCustomField}
+              openAddCustomFieldDialog={() => setAddCustomFieldOpen(true)}
+            />
+
+            <div class="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                class="px-4"
+              >
+                取消
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => {
+                  handleCommit();
+                  setOpen(false);
+                }}
+                class="px-6"
+              >
+                应用
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
