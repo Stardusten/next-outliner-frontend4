@@ -23,6 +23,8 @@ const editorSchema = z.object({
   monospaceFontSize: z.number().min(12).default(16),
   monospaceFontFamily: z.string().default("Inter"),
 
+  locateMode: z.enum(["common-parent", "new-parent"]).default("common-parent"),
+
   // 附件默认显示模式
   imageFileDefaultDisplayMode: z
     .enum(["inline", "expanded", "preview"])

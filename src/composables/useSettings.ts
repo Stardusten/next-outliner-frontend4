@@ -278,6 +278,23 @@ const settingsConfig: SettingsPageConfig[] = [
     id: "editor",
     groups: [
       {
+        id: "search",
+        title: "搜索",
+        settings: [
+          {
+            id: "locateMode",
+            type: "single-select",
+            label: "定位模式",
+            settingPath: "editor.locateMode",
+            defaultValue: "common-parent",
+            options: [
+              { id: "common-parent", label: "common-parent" },
+              { id: "new-parent", label: "new-parent" },
+            ],
+          },
+        ],
+      },
+      {
         id: "upload",
         title: "附件默认显示模式",
         description:

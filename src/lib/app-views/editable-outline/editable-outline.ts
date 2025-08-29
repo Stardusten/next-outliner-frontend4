@@ -344,83 +344,108 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
     app.undoStack.push(lastTx);
   }
 
-  async locateBlock(blockId: BlockId) {
-    await this.app.withTx((tx) => {
-      // 1. 获取目标块的完整路径
-      const targetPath = tx.getBlockPath(blockId);
-      if (!targetPath) {
-        return;
-      }
+  async locateBlock(
+    blockId: BlockId,
+    mode: "common-parent" | "new-parent" = "common-parent"
+  ) {
+    if (mode === "common-parent") {
+      await this.app.withTx((tx) => {
+        // 1. 获取目标块的完整路径
+        const targetPath = tx.getBlockPath(blockId);
+        if (!targetPath) {
+          return;
+        }
 
-      // 2. 展开所有祖先块中折叠的块
-      // targetPath 包含目标块本身，所以我们需要排除最后一个元素
-      const ancestors = targetPath.slice(0, -1);
-      for (const ancestorId of ancestors) {
-        tx.updateBlock(ancestorId, { folded: false });
-      }
+        // 2. 展开所有祖先块中折叠的块
+        // targetPath 包含目标块本身，所以我们需要排除最后一个元素
+        const ancestors = targetPath.slice(0, -1);
+        for (const ancestorId of ancestors) {
+          tx.updateBlock(ancestorId, { folded: false });
+        }
 
-      // 3. 确定根块：找到当前根块与目标块的公共父块
-      const rootBlockIds = this.getRootBlockIds();
-      const currentRoots =
-        rootBlockIds.length > 0 ? rootBlockIds : this.app.getRootBlockIds(); // todo
+        // 3. 确定根块：找到当前根块与目标块的公共父块
+        const rootBlockIds = this.getRootBlockIds();
+        const currentRoots =
+          rootBlockIds.length > 0 ? rootBlockIds : this.app.getRootBlockIds(); // todo
 
-      let newRootBlocks: BlockId[] = [];
+        let newRootBlocks: BlockId[] = [];
 
-      if (currentRoots.length === 0 || currentRoots.length > 1) {
-        // 如果当前没有根块，显示所有根块
-        newRootBlocks = [];
-      } else {
-        // 寻找公共父块
-        let commonAncestor: BlockId | null = null;
+        if (currentRoots.length === 0 || currentRoots.length > 1) {
+          // 如果当前没有根块，显示所有根块
+          newRootBlocks = [];
+        } else {
+          // 寻找公共父块
+          let commonAncestor: BlockId | null = null;
 
-        for (const rootId of currentRoots) {
-          const rootPath = tx.getBlockPath(rootId);
-          if (!rootPath) continue;
+          for (const rootId of currentRoots) {
+            const rootPath = tx.getBlockPath(rootId);
+            if (!rootPath) continue;
 
-          for (
-            let i = 0;
-            i < Math.min(rootPath.length, targetPath.length);
-            i++
-          ) {
-            if (rootPath[i] === targetPath[i]) {
-              commonAncestor = rootPath[i]!;
-            } else {
+            for (
+              let i = 0;
+              i < Math.min(rootPath.length, targetPath.length);
+              i++
+            ) {
+              if (rootPath[i] === targetPath[i]) {
+                commonAncestor = rootPath[i]!;
+              } else {
+                break;
+              }
+            }
+
+            if (commonAncestor) {
               break;
             }
           }
 
+          // 如果找到公共祖先，使用它作为新的根块
           if (commonAncestor) {
-            break;
+            newRootBlocks = [commonAncestor];
+          } else {
+            // 如果没有公共祖先，显示所有根块
+            newRootBlocks = [];
           }
         }
+        this.setRootBlockIds(newRootBlocks);
+        tx.setOrigin("localEditorStructural");
+      });
 
-        // 如果找到公共祖先，使用它作为新的根块
-        if (commonAncestor) {
-          newRootBlocks = [commonAncestor];
+      // 聚焦到目标块
+      setTimeout(() => {
+        if (!this.tiptap) return;
+        const doc = this.tiptap.state.doc;
+        const absPos = getAbsPos(doc, blockId, 0);
+        if (absPos == null) return;
+        const sel = TextSelection.create(doc, absPos);
+        const tr = this.tiptap.state.tr.setSelection(sel);
+        this.tiptap.view.focus();
+        this.tiptap.view.dispatch(tr);
+        // 使用自定义的滚动函数，支持动画 + 滚动到中间
+        scrollPmNodeIntoView(this.tiptap.view, absPos);
+        // 高亮目标块
+        highlightEphemeral(this.tiptap.view, absPos);
+      });
+    } else if (mode === "new-parent") {
+      await this.app.withTx((tx) => {
+        this.setRootBlockIds([blockId]);
+        const children = tx.getChildrenIds(blockId);
+        if (children.length > 0) {
+          tx.setSelection({
+            viewId: this.id,
+            blockId: children[0]!,
+            anchor: 0,
+            scrollIntoView: true,
+          });
         } else {
-          // 如果没有公共祖先，显示所有根块
-          newRootBlocks = [];
+          tx.setSelection({
+            viewId: this.id,
+            blockId,
+            anchor: 0,
+            scrollIntoView: true,
+          });
         }
-      }
-      this.setRootBlockIds(newRootBlocks);
-      tx.setOrigin("localEditorStructural");
-    });
-
-    // 聚焦到目标块
-    setTimeout(() => {
-      if (!this.tiptap) return;
-      const doc = this.tiptap.state.doc;
-      const absPos = getAbsPos(doc, blockId, 0);
-      if (absPos == null) return;
-      const sel = TextSelection.create(doc, absPos);
-      const tr = this.tiptap.state.tr.setSelection(sel);
-      this.tiptap.view.focus();
-      this.tiptap.view.dispatch(tr);
-      // 使用自定义的滚动函数，支持动画 + 滚动到中间
-      scrollPmNodeIntoView(this.tiptap.view, absPos);
-      // 高亮目标块
-      highlightEphemeral(this.tiptap.view, absPos);
-    });
+      });
+    }
   }
 
   #rerender(selection?: SelectionInfo, fromStorageSync = false) {
@@ -588,7 +613,7 @@ export class EditableOutlineView implements AppView<EditableOutlineViewEvents> {
 
         const newData = contentNodeToStrAndType(listItem.node.firstChild!);
         // console.log(newData);
-        
+
         // 使用防抖：同一个编辑器内同一个块的连续编辑会被防抖合并
         this.app.withTx(
           (tx) => {

@@ -2,6 +2,7 @@ import { batch, createSignal } from "solid-js";
 import type { App } from "@/lib/app/app";
 import type { BlockNode } from "@/lib/common/types";
 import { EditableOutlineView } from "@/lib/app-views/editable-outline/editable-outline";
+import { useCurrRepoConfig } from "./useCurrRepoConfig";
 
 export type SearchResult = {
   block: BlockNode;
@@ -11,6 +12,7 @@ export type SearchResult = {
 export function useSearch(app: App) {
   const { visibleSignal, querySignal, resultsSignal, activeIndexSignal } =
     app.search;
+  const getRepoConfig = useCurrRepoConfig();
   const [searchVisible, setSearchVisible] = visibleSignal;
   const [searchQuery, setSearchQuery] = querySignal;
   const [searchResults, setSearchResults] = resultsSignal;
@@ -92,9 +94,13 @@ export function useSearch(app: App) {
   };
 
   const selectBlock = (result: SearchResult) => {
+    const repoConfig = getRepoConfig();
     const editor = app.getLastFocusedAppView();
     if (editor instanceof EditableOutlineView) {
-      editor.locateBlock(result.block.id);
+      editor.locateBlock(
+        result.block.id,
+        repoConfig?.editor.locateMode ?? "new-parent"
+      );
     }
     closeSearch();
   };
